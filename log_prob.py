@@ -42,7 +42,7 @@ def calculate_chisquared(sim_data, obs_data, error):
 
     """
 
-    error = error + np.PZERO
+    error = error + 1e-100
     return np.sum((obs_data - sim_data) ** 2 / (error ** 2))
 
 
@@ -103,7 +103,11 @@ def log_prob(parameters, options, debugging=False):
     lam_opac = opac_dict['lam']
     n_a = len(opac_dict['a'])
 
-    write_radmc3d(disk2d, lam_opac, temp_path, show_plots=False)
+    try:
+        write_radmc3d(disk2d, lam_opac, temp_path, show_plots=False)
+    except Exception:
+        warnings.warn(f"Index error in write_radmc3d")
+        return -np.Inf, "Index error in write_radmc3d"
 
     # calculate the mm continuum image
     fname_mm_sim = temp_path / 'image_mm.fits'
@@ -130,7 +134,7 @@ def log_prob(parameters, options, debugging=False):
 
     x_mm_sim, y_mm_sim, dy_mm_sim = get_profile_from_fits(
         str(fname_mm_sim),
-        clip=options['clip'],
+        rvals=options['x_mm_obs'],
         inc=options['inc'],
         PA=options['PA'],
         z0=0.0,
@@ -138,20 +142,16 @@ def log_prob(parameters, options, debugging=False):
         beam=iq_mm_obs.beam,
         show_plots=False)
 
-    # clip the profiles if they are not of the same length
-    if not (len(options['x_mm_obs']) == len(x_mm_sim)):
-        i_max = min(len(options['x_mm_obs']), len(x_mm_sim)) - 1
-        x_mm_sim = x_mm_sim[:i_max]
-        y_mm_sim = y_mm_sim[:i_max]
-        dy_mm_sim = dy_mm_sim[:i_max]
-        options['x_mm_obs'] = options['x_mm_obs'][:i_max]
-        options['y_mm_obs'] = options['y_mm_obs'][:i_max]
-        options['dy_mm_obs'] = options['dy_mm_obs'][:i_max]
-
     if not np.allclose(x_mm_sim, options['x_mm_obs']):
         raise ValueError('observed and simulated millimeter radial profile grids are not equal')
 
+    print(f"y_mm_sim: {y_mm_sim}")
+    print(f"y_mm_obs: {options['y_mm_obs']}")
+    print(f"dy_mm_obs: {options['dy_mm_obs']}")
+
     chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], options['dy_mm_obs'])
+
+    print(f"Chi quadro {temp_number}: {chi_squared}")
 
     for i_grain in range(n_a):
         opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
@@ -215,7 +215,8 @@ def log_prob(parameters, options, debugging=False):
 
     profiles_sca_sim = get_normalized_profiles(
         str(fname_sca_sim),
-        clip=options['clip'],
+        rvals=options['profiles_sca_obs']['B']['x'],
+        # clip=options['clip'],
         inc=options['inc'],
         PA=options['PA'],
         z0=options['z0'],
@@ -243,10 +244,16 @@ def log_prob(parameters, options, debugging=False):
                                             profile_obs['y'][i_obs_0:max_len],
                                             profile_obs['dy'][i_obs_0:max_len])
 
+        print(f"y_sca_sim: {profile_sim['y'][i_sim_0:max_len]}")
+        print(f"y_sca_obs: {profile_obs['y'][i_obs_0:max_len]}")
+        print(f"dy_sca_obs: {profile_obs['dy'][i_obs_0:max_len]}")
+
+        print(f"Chi quadro {temp_number}: {chi_squared}")
+
+
     logp = -np.log(chi_squared)
 
     if debugging:
-        fnr = random.getrandbits(32)
 
         # output_directory = 'out_dir'
         # Path(output_directory).mkdir(parents=True, exist_ok=True)
@@ -257,6 +264,6 @@ def log_prob(parameters, options, debugging=False):
 
         with filename.open('wb') as fn:
             pickle.dump(output_dict, fn)
-        return logp, fnr
+        return logp, temp_number
     else:
         return logp, ''

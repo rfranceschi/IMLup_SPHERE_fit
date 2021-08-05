@@ -21,6 +21,7 @@ from helper_functions import get_normalized_profiles
 from helper_functions import get_profile_from_fits
 from helper_functions import make_opacs
 
+# np.seterr(all='raise')
 logging.basicConfig(filename='run_model.log', filemode='w', level=logging.DEBUG)
 
 # define constants
@@ -185,7 +186,7 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 4
+procs = 4  # 4
 steps = 5  # 30
 
 if procs > 1:

@@ -408,7 +408,7 @@ def chop_forward_scattering(opac_dict, chopforward=5):
     n_a = len(a)
     n_lam = len(lam)
 
-    zscat = opacity.calculate_mueller_matrix(lam, m, S1, S2, theta=theta, k_sca=k_sca)['zscat']
+    zscat = opacity.calculate_mueller_matrix(lam, m, S1, S2)['zscat']
     zscat_nochop = zscat.copy()
 
     mu = np.cos(theta * np.pi / 180.)
