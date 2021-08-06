@@ -5,3 +5,5 @@
 /corner.pdf
 /.idea/
 /testing.ipynb
+/.ipynb_checkpoints/
+__pycache__/

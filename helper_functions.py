@@ -1,20 +1,16 @@
-import tempfile
 import warnings
 from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.constants as c
-import astropy.units as u
 
 from gofish import imagecube
-import dsharp_helper as dh
 import dsharp_opac as opacity
 import disklab
 
 from dipsy.utils import get_interfaces_from_log_cell_centers
 from dipsy import get_powerlaw_dust_distribution
-from radmc3dPy import image
 
 au = c.au.cgs.value
 M_sun = c.M_sun.cgs.value
