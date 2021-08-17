@@ -60,12 +60,12 @@ def log_prob(parameters, options, debugging=False):
 
     output = Capturing()
 
-    if not (0 < params['sigma_coeff'] < 1e4 or
-            -5 < params['sigma_exp'] < 5 or
-            -5 < params['size_exp'] < 5 or
-            1e-4 < params['amax_coeff'] < 100 or
-            -5 < params['amax_exp'] < 5 or
-            1e-6 < params['d2g_coeff'] < 1e2 or
+    if not (0 < params['sigma_coeff'] < 1e4 and
+            -5 < params['sigma_exp'] < 5 and
+            -5 < params['size_exp'] < 5 and
+            1e-4 < params['amax_coeff'] < 100 and
+            -5 < params['amax_exp'] < 5 and
+            1e-6 < params['d2g_coeff'] < 1e2 and
             -5 < params['d2g_exp'] < 5):
         print("Parameters out of prior")
         return -np.Inf, "Parameters out of prior"
@@ -104,6 +104,8 @@ def log_prob(parameters, options, debugging=False):
     lam_opac = opac_dict['lam']
     n_a = len(opac_dict['a'])
 
+    print(parameters)
+
     try:
         write_radmc3d(disk2d, lam_opac, temp_path, show_plots=False)
     except Exception:
@@ -135,8 +137,8 @@ def log_prob(parameters, options, debugging=False):
         radmc_image_path.replace(temp_path / 'image_mm.out')
         im_mm_sim.writeFits(str(fname_mm_sim), dpc=options['distance'], coord='15h56m09.17658s -37d56m06.1193s')
     else:
-        shutil.copytree(temp_path, temp_path + "_error")
-        warnings.warn(f"continuum image failed to run, folder copied to {temp_path + '_error'}, radmc3d call was {radmc_call_mm}")
+        shutil.copytree(temp_path, temp_path.with_suffix("_error"))
+        warnings.warn(f"continuum image failed to run, folder copied to {temp_path.with_suffix('_error')}, radmc3d call was {radmc_call_mm}")
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
@@ -225,8 +227,8 @@ def log_prob(parameters, options, debugging=False):
         im.writeFits(str(fname_sca_sim), dpc=options['distance'],
                      fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1})
     else:
-        shutil.copytree(temp_path, temp_path + "_error")
-        warnings.warn(f"scattered light image failed to run, folder copied to {temp_path + '_error'}, radmc3d call was {radmc_call_sca}")
+        shutil.copytree(temp_path, temp_path.with_suffix("_error"))
+        warnings.warn(f"scattered light image failed to run, folder copied to {temp_path.with_suffix('_error')}, radmc3d call was {radmc_call_sca}")
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations

@@ -187,7 +187,7 @@ backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
 procs = 4  # 4
-steps = 5  # 30
+steps = 30  # 30
 
 if procs > 1:
     # Parallelize the simulation
