@@ -60,12 +60,12 @@ def log_prob(parameters, options, debugging=False):
 
     output = Capturing()
 
-    if not (0 < params['sigma_coeff'] < 1e4 or
-            -5 < params['sigma_exp'] < 5 or
-            -5 < params['size_exp'] < 5 or
-            1e-4 < params['amax_coeff'] < 100 or
-            -5 < params['amax_exp'] < 5 or
-            1e-6 < params['d2g_coeff'] < 1e2 or
+    if not (0 < params['sigma_coeff'] < 1e4 and
+            -5 < params['sigma_exp'] < 5 and
+            -5 < params['size_exp'] < 5 and
+            1e-4 < params['amax_coeff'] < 100 and
+            -5 < params['amax_exp'] < 5 and
+            1e-6 < params['d2g_coeff'] < 1e2 and
             -5 < params['d2g_exp'] < 5):
         print("Parameters out of prior")
         return -np.Inf, "Parameters out of prior"
