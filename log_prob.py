@@ -68,7 +68,7 @@ def log_prob(parameters, options, debugging=False):
             1e-6 < params['d2g_coeff'] < 1e2 and
             -5 < params['d2g_exp'] < 5):
         print("Parameters out of prior")
-        return -np.Inf, "Parameters out of prior"
+        return -np.Inf, -1
 
     radmc3d_exec = Path('~/bin/radmc3d').expanduser()
 
@@ -104,11 +104,11 @@ def log_prob(parameters, options, debugging=False):
     lam_opac = opac_dict['lam']
     n_a = len(opac_dict['a'])
 
-    try:
-        write_radmc3d(disk2d, lam_opac, temp_path, show_plots=False)
-    except Exception:
-        warnings.warn("Index error in write_radmc3d")
-        return -np.Inf, "Index error in write_radmc3d"
+    # try:
+    write_radmc3d(disk2d, lam_opac, temp_path, show_plots=False)
+    # except Exception:
+    #    warnings.warn("Index error in write_radmc3d")
+    #    return -np.Inf, "Index error in write_radmc3d"
 
     # read the real disk images
 
@@ -135,8 +135,9 @@ def log_prob(parameters, options, debugging=False):
         radmc_image_path.replace(temp_path / 'image_mm.out')
         im_mm_sim.writeFits(str(fname_mm_sim), dpc=options['distance'], coord='15h56m09.17658s -37d56m06.1193s')
     else:
-        shutil.copytree(temp_path, temp_path + "_error")
-        warnings.warn(f"continuum image failed to run, folder copied to {temp_path + '_error'}, radmc3d call was {radmc_call_mm}")
+        #shutil.copytree(temp_path, str(temp_path) + "_error")
+        shutil.move(temp_path, str(temp_path) + "_error")
+        warnings.warn(f"continuum image failed to run, folder copied to {str(temp_path) + '_error'}, radmc3d call was {radmc_call_mm}")
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
@@ -170,7 +171,7 @@ def log_prob(parameters, options, debugging=False):
         options['dy_mm_obs'] = options['dy_mm_obs'][:i_max]
 
     if not np.allclose(x_mm_sim, options['x_mm_obs']):
-        raise ValueError('observed and simulated millimeter radial profile grids are not equal')
+        raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
 
     # calculate the chi-squared value from it
 
@@ -210,7 +211,7 @@ def log_prob(parameters, options, debugging=False):
     with output:
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (iq_sca_obs.nxpix - 1) * 1.0000000000000286
-        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 4"
+        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
             path=temp_path,
@@ -225,8 +226,8 @@ def log_prob(parameters, options, debugging=False):
         im.writeFits(str(fname_sca_sim), dpc=options['distance'],
                      fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1})
     else:
-        shutil.copytree(temp_path, temp_path + "_error")
-        warnings.warn(f"scattered light image failed to run, folder copied to {temp_path + '_error'}, radmc3d call was {radmc_call_sca}")
+        shutil.move(temp_path, str(temp_path) + "_error")
+        warnings.warn(f"scattered light image failed to run, folder moved to {str(temp_path) + '_error'}, radmc3d call was {radmc_call_sca}")
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
@@ -250,7 +251,7 @@ def log_prob(parameters, options, debugging=False):
     try:
         assert np.allclose(options['profiles_sca_obs']['B']['x'], profiles_sca_sim['B']['x'])
     except Exception:
-        warnings.warn("observed and simulated scattered radial profile grids are not equal")
+        warnings.warn(f"observed and simulated scattered radial profile grids are not equal [run {temp_number}]")
 
     for i, key in enumerate(options['profiles_sca_obs'].keys()):
         profile_obs = options['profiles_sca_obs'][key]
@@ -270,28 +271,27 @@ def log_prob(parameters, options, debugging=False):
 
     logp = -np.log(chi_squared)
 
-    if debugging:
-        # output_directory = 'out_dir'
-        # Path(output_directory).mkdir(parents=True, exist_ok=True)
-        # filename = Path(output_directory) / f'run_{fnr}.pickle'
-        output_dict["radmc_call_mm"] = radmc_call_mm
-        output_dict["radmc_call_sca"] = radmc_call_sca
-        output_dict["folder_path"] = str(fname_sca_sim)
-        output_dict['iq_mm_obs'] = iq_mm_obs
-        output_dict['iq_mm_sim'] = iq_mm_sim
-        output_dict['iq_sca_obs'] = iq_sca_obs
-        output_dict['iq_sca_sim'] = iq_sca_sim
-        output_dict['profiles_sca_sim'] = profiles_sca_sim
-        output_dict['profiles_sca_obs'] = options['profiles_sca_obs']
-        output_dict['x_mm_sim'] = x_mm_sim
-        output_dict['y_mm_sim'] = y_mm_sim
-        output_dict['dy_mm_sim'] = dy_mm_sim
+    # we keep some results stored in a dictionary
 
-        filename = output_dir / f'run_{temp_number}.pickle'
-        print(str(filename))
+    output_dict["radmc_call_mm"] = radmc_call_mm
+    output_dict["radmc_call_sca"] = radmc_call_sca
+    output_dict["folder_path"] = str(fname_sca_sim)
+    output_dict['iq_mm_obs'] = iq_mm_obs
+    output_dict['iq_mm_sim'] = iq_mm_sim
+    output_dict['iq_sca_obs'] = iq_sca_obs
+    output_dict['iq_sca_sim'] = iq_sca_sim
+    output_dict['profiles_sca_sim'] = profiles_sca_sim
+    output_dict['profiles_sca_obs'] = options['profiles_sca_obs']
+    output_dict['x_mm_sim'] = x_mm_sim
+    output_dict['y_mm_sim'] = y_mm_sim
+    output_dict['dy_mm_sim'] = dy_mm_sim
 
-        with filename.open('wb') as fn:
-            pickle.dump(output_dict, fn)
-        return logp, temp_number
-    else:
-        return logp, ''
+    # store the pickled dictionary
+    filename = output_dir / f'run_{temp_number}.pickle'
+    with filename.open('wb') as fn:
+        pickle.dump(output_dict, fn)
+
+    if not debugging:
+        shutil.rmtree(temp_path)
+
+    return logp, temp_number
