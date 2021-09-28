@@ -7,13 +7,11 @@ import logging
 
 import astropy.constants as c
 import astropy.units as u
-import corner
 import dsharp_helper as dh
 import dsharp_opac as do
 import emcee
 import numpy as np
 from astropy.io import fits
-from matplotlib import pyplot as plt
 
 from log_prob import log_prob
 from helper_functions import chop_forward_scattering
@@ -187,7 +185,7 @@ backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
 procs = 4  # 4
-steps = 5  # 30
+steps = 30  # 30
 
 if procs > 1:
     # Parallelize the simulation

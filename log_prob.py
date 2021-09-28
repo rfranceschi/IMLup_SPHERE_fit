@@ -56,17 +56,22 @@ def log_prob(parameters, options, debugging=False):
         "d2g_exp": parameters[6],
     }
 
+    temp_number = random.getrandbits(32)
+    output_dir = Path('runs')
+    temp_path = output_dir / f'run_{temp_number}'
+    temp_path.mkdir(parents=True, exist_ok=True)
+
     output_dict = {}
 
     output = Capturing()
 
-    if not (0 < params['sigma_coeff'] < 1e4 and
-            -5 < params['sigma_exp'] < 5 and
-            -5 < params['size_exp'] < 5 and
-            1e-4 < params['amax_coeff'] < 100 and
-            -5 < params['amax_exp'] < 5 and
-            1e-6 < params['d2g_coeff'] < 1e2 and
-            -5 < params['d2g_exp'] < 5):
+    if not ((0 < params['sigma_coeff'] < 1e4) and
+            (-5 < params['sigma_exp'] < 5) and
+            (-5 < params['size_exp'] < 5) and
+            (1e-4 < params['amax_coeff'] < 100) and
+            (-5 < params['amax_exp'] < 5) and
+            (1e-6 < params['d2g_coeff'] < 1e2) and
+            (-5 < params['d2g_exp'] < 5)):
         print("Parameters out of prior")
         return -np.Inf, -1
 
@@ -75,10 +80,6 @@ def log_prob(parameters, options, debugging=False):
     # temp_directory = tempfile.TemporaryDirectory(dir='.')
     # temp_path = temp_directory.name
     ...
-    temp_number = random.getrandbits(32)
-    output_dir = Path('runs')
-    temp_path = output_dir / f'run_{temp_number}'
-    temp_path.mkdir(parents=True, exist_ok=True)
 
     # make the disklab 2D model
 
@@ -135,9 +136,17 @@ def log_prob(parameters, options, debugging=False):
         radmc_image_path.replace(temp_path / 'image_mm.out')
         im_mm_sim.writeFits(str(fname_mm_sim), dpc=options['distance'], coord='15h56m09.17658s -37d56m06.1193s')
     else:
-        #shutil.copytree(temp_path, str(temp_path) + "_error")
-        shutil.move(temp_path, str(temp_path) + "_error")
-        warnings.warn(f"continuum image failed to run, folder copied to {str(temp_path) + '_error'}, radmc3d call was {radmc_call_mm}")
+        shutil.move(temp_path, str(temp_path) + "_mm_error")
+        warnings.warn(f"continuum image failed to run, folder copied to {str(temp_path) + '_mm_error'}, radmc3d call was {radmc_call_mm}")
+        output_dict['error'] = "continuum image failed to run"
+        output_dict['params'] = params
+        output_dict['radmc_call_mm'] = radmc_call_mm
+        print(output_dict['error'])
+
+        filename = output_dir / f'run_{temp_number}.pickle'
+        with filename.open('wb') as fn:
+            pickle.dump(output_dict, fn)
+
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
@@ -226,8 +235,16 @@ def log_prob(parameters, options, debugging=False):
         im.writeFits(str(fname_sca_sim), dpc=options['distance'],
                      fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1})
     else:
-        shutil.move(temp_path, str(temp_path) + "_error")
-        warnings.warn(f"scattered light image failed to run, folder moved to {str(temp_path) + '_error'}, radmc3d call was {radmc_call_sca}")
+        shutil.move(temp_path, str(temp_path) + "_sca_error")
+        warnings.warn(f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
+        output_dict['error'] = "continuum image failed to run"
+        output_dict['params'] = params
+        output_dict['radmc_call_sca'] = radmc_call_sca
+
+        filename = output_dir / f'run_{temp_number}.pickle'
+        with filename.open('wb') as fn:
+            pickle.dump(output_dict, fn)
+
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
