@@ -79,7 +79,6 @@ def log_prob(parameters, options, debugging=False):
 
     # temp_directory = tempfile.TemporaryDirectory(dir='.')
     # temp_path = temp_directory.name
-    ...
 
     # make the disklab 2D model
 
@@ -172,12 +171,14 @@ def log_prob(parameters, options, debugging=False):
 
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
         i_max = min(len(options['x_mm_obs']), len(x_mm_sim)) - 1
-        x_mm_sim = x_mm_sim[:i_max]
-        y_mm_sim = y_mm_sim[:i_max]
-        dy_mm_sim = dy_mm_sim[:i_max]
-        options['x_mm_obs'] = options['x_mm_obs'][:i_max]
-        options['y_mm_obs'] = options['y_mm_obs'][:i_max]
-        options['dy_mm_obs'] = options['dy_mm_obs'][:i_max]
+        i_min_obs = options['x_mm_obs'].searchsorted(1.0)
+        i_min_sim = x_mm_sim.searchsorted(1.0)
+        x_mm_sim = x_mm_sim[i_min_sim:i_max]
+        y_mm_sim = y_mm_sim[i_min_sim:i_max]
+        dy_mm_sim = dy_mm_sim[i_min_sim:i_max]
+        options['x_mm_obs'] = options['x_mm_obs'][i_min_obs:i_max]
+        options['y_mm_obs'] = options['y_mm_obs'][i_min_obs:i_max]
+        options['dy_mm_obs'] = options['dy_mm_obs'][i_min_obs:i_max]
 
     if not np.allclose(x_mm_sim, options['x_mm_obs']):
         raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
