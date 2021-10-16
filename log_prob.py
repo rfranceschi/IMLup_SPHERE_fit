@@ -22,6 +22,7 @@ from helper_functions import get_profile_from_fits
 from helper_functions import make_disklab2d_model
 from helper_functions import read_opacs
 from helper_functions import write_radmc3d
+import astropy.units as u
 
 au = c.au.cgs.value
 M_sun = c.M_sun.cgs.value
@@ -185,7 +186,11 @@ def log_prob(parameters, options, debugging=False):
 
     # calculate the chi-squared value from it
 
-    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], options['dy_mm_obs'])
+    x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
+    rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
+    rms_weighted = rms / np.sqrt(x_mm_sim / (2 * np.pi * x_beam_as))
+
+    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.max(rms_weighted, options['dy_mm_obs']))
 
     # write the detailed scattering matrix files
 
@@ -283,9 +288,14 @@ def log_prob(parameters, options, debugging=False):
         assert np.allclose(profile_sim['x'][i_sim_0:max_len],
                            profile_obs['x'][i_obs_0:max_len]), 'x arrays do not agree'
 
+        x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
+        rms_sca = options['RMS_sca'] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
+        # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
+        rms_sca_weighted = rms_sca / np.sqrt(x_mm_sim / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
+
         chi_squared += calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
                                             profile_obs['y'][i_obs_0:max_len],
-                                            profile_obs['dy'][i_obs_0:max_len])
+                                            np.max(rms_sca_weighted, ['dy'][i_obs_0:max_len]))
 
     logp = -np.log(chi_squared)
 

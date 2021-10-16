@@ -190,8 +190,8 @@ steps = 300  # 30
 if procs > 1:
     # Parallelize the simulation
     with Pool(processes=procs) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, True], pool=pool, backend=backend)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
         res = sampler.run_mcmc(p0, steps, progress=True, store=True)
 else:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, True], backend=backend)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
     res = sampler.run_mcmc(p0, steps, progress=True, store=True)
