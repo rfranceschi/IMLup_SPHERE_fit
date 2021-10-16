@@ -184,7 +184,7 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 30  # 4
+procs = 30  # 30
 steps = 300  # 30
 
 if procs > 1:

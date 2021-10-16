@@ -190,7 +190,7 @@ def log_prob(parameters, options, debugging=False):
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
     rms_weighted = rms / np.sqrt(x_mm_sim / (2 * np.pi * x_beam_as))
 
-    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.max(rms_weighted, options['dy_mm_obs']))
+    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.maximum(rms_weighted, options['dy_mm_obs']))
 
     # write the detailed scattering matrix files
 
@@ -295,7 +295,7 @@ def log_prob(parameters, options, debugging=False):
 
         chi_squared += calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
                                             profile_obs['y'][i_obs_0:max_len],
-                                            np.max(rms_sca_weighted, ['dy'][i_obs_0:max_len]))
+                                            np.maximum(rms_sca_weighted, ['dy'][i_obs_0:max_len]))
 
     logp = -np.log(chi_squared)
 
