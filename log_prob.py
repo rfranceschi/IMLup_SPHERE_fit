@@ -289,7 +289,7 @@ def log_prob(parameters, options, debugging=False):
                            profile_obs['x'][i_obs_0:max_len]), 'x arrays do not agree'
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
-        rms_sca = options['RMS_sca'] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
+        rms_sca = profile_sim[key]['dy'] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(x_mm_sim / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
 
