@@ -48,12 +48,12 @@ def calculate_chisquared(sim_data, obs_data, error):
 
 def log_prob(parameters, options, debugging=False):
     params = {
-        "sigma_coeff": parameters[0],
+        "sigma_coeff": parameters[0],###
         "sigma_exp": parameters[1],
         "size_exp": parameters[2],
-        "amax_coeff": parameters[3],
+        "amax_coeff": parameters[3],####
         "amax_exp": parameters[4],
-        "d2g_coeff": parameters[5],
+        "d2g_coeff": parameters[5],#####
         "d2g_exp": parameters[6],
     }
 
@@ -75,6 +75,8 @@ def log_prob(parameters, options, debugging=False):
             (-5 < params['d2g_exp'] < 5)):
         print("Parameters out of prior")
         return -np.Inf, -1
+    # else:
+    #     logP = - np.log(grain_size) - np.log(disk_mass) - np.log(d2g)
 
     radmc3d_exec = Path('~/bin/radmc3d').expanduser()
 
@@ -185,7 +187,6 @@ def log_prob(parameters, options, debugging=False):
         raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
 
     # calculate the chi-squared value from it
-
     x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
     rms_weighted = rms / np.sqrt(options['x_mm_obs'] / (2 * np.pi * x_beam_as))
@@ -193,7 +194,6 @@ def log_prob(parameters, options, debugging=False):
     chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.maximum(rms_weighted, options['dy_mm_obs']))
 
     # write the detailed scattering matrix files
-
     for i_grain in range(n_a):
         opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
 
@@ -293,11 +293,12 @@ def log_prob(parameters, options, debugging=False):
         # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
 
-        chi_squared += calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
-                                            profile_obs['y'][i_obs_0:max_len],
-                                            np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
-
-    logp = -np.log(chi_squared)
+        # divide by 4 because we have 4 sca and one mm profiles
+        chi_squared += 0.25 * calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
+                                                   profile_obs['y'][i_obs_0:max_len],
+                                                   np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
+    # Jeffreys’ prior
+    logp = -np.log(chi_squared) + np.log(parameters[0] * parameters[3] * parameters[5])
 
     # we keep some results stored in a dictionary
 
