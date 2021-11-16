@@ -166,7 +166,7 @@ pickle.dump(options, open("options.pickle", "wb"))
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 14  # it  does not work with fewer  walkers than the number  of dimensions
+nwalkers = 30  # it  does not work with fewer  walkers than the number  of dimensions
 ndim = 7
 
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
@@ -184,14 +184,14 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 4  # 4
-steps = 30  # 30
+procs = 30  # 30
+steps = 1000  # 30
 
 if procs > 1:
     # Parallelize the simulation
     with Pool(processes=procs) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, True], pool=pool, backend=backend)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
         res = sampler.run_mcmc(p0, steps, progress=True, store=True)
 else:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, True], backend=backend)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
     res = sampler.run_mcmc(p0, steps, progress=True, store=True)

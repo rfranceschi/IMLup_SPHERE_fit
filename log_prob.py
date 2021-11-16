@@ -2,13 +2,15 @@
 # coding: utf-8
 # import os
 # import tempfile
+import logging
 import pickle
+import random
 import shutil
 import warnings
 from pathlib import Path
-import random
 
 import astropy.constants as c
+import astropy.units as u
 import disklab
 import dsharp_opac as opacity
 import numpy as np
@@ -47,12 +49,12 @@ def calculate_chisquared(sim_data, obs_data, error):
 
 def log_prob(parameters, options, debugging=False):
     params = {
-        "sigma_coeff": parameters[0],
+        "sigma_coeff": parameters[0],  ###
         "sigma_exp": parameters[1],
         "size_exp": parameters[2],
-        "amax_coeff": parameters[3],
+        "amax_coeff": parameters[3],  ####
         "amax_exp": parameters[4],
-        "d2g_coeff": parameters[5],
+        "d2g_coeff": parameters[5],  #####
         "d2g_exp": parameters[6],
     }
 
@@ -62,6 +64,7 @@ def log_prob(parameters, options, debugging=False):
     temp_path.mkdir(parents=True, exist_ok=True)
 
     output_dict = {}
+    output_dict['params'] = params
 
     output = Capturing()
 
@@ -74,12 +77,13 @@ def log_prob(parameters, options, debugging=False):
             (-5 < params['d2g_exp'] < 5)):
         print("Parameters out of prior")
         return -np.Inf, -1
+    # else:
+    #     logP = - np.log(grain_size) - np.log(disk_mass) - np.log(d2g)
 
     radmc3d_exec = Path('~/bin/radmc3d').expanduser()
 
     # temp_directory = tempfile.TemporaryDirectory(dir='.')
     # temp_path = temp_directory.name
-    ...
 
     # make the disklab 2D model
 
@@ -137,9 +141,9 @@ def log_prob(parameters, options, debugging=False):
         im_mm_sim.writeFits(str(fname_mm_sim), dpc=options['distance'], coord='15h56m09.17658s -37d56m06.1193s')
     else:
         shutil.move(temp_path, str(temp_path) + "_mm_error")
-        warnings.warn(f"continuum image failed to run, folder copied to {str(temp_path) + '_mm_error'}, radmc3d call was {radmc_call_mm}")
+        warnings.warn(
+            f"continuum image failed to run, folder copied to {str(temp_path) + '_mm_error'}, radmc3d call was {radmc_call_mm}")
         output_dict['error'] = "continuum image failed to run"
-        output_dict['params'] = params
         output_dict['radmc_call_mm'] = radmc_call_mm
         print(output_dict['error'])
 
@@ -172,22 +176,26 @@ def log_prob(parameters, options, debugging=False):
 
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
         i_max = min(len(options['x_mm_obs']), len(x_mm_sim)) - 1
-        x_mm_sim = x_mm_sim[:i_max]
-        y_mm_sim = y_mm_sim[:i_max]
-        dy_mm_sim = dy_mm_sim[:i_max]
-        options['x_mm_obs'] = options['x_mm_obs'][:i_max]
-        options['y_mm_obs'] = options['y_mm_obs'][:i_max]
-        options['dy_mm_obs'] = options['dy_mm_obs'][:i_max]
+        i_min_obs = options['x_mm_obs'].searchsorted(1.0)
+        i_min_sim = x_mm_sim.searchsorted(1.0)
+        x_mm_sim = x_mm_sim[i_min_sim:i_max]
+        y_mm_sim = y_mm_sim[i_min_sim:i_max]
+        dy_mm_sim = dy_mm_sim[i_min_sim:i_max]
+        options['x_mm_obs'] = options['x_mm_obs'][i_min_obs:i_max]
+        options['y_mm_obs'] = options['y_mm_obs'][i_min_obs:i_max]
+        options['dy_mm_obs'] = options['dy_mm_obs'][i_min_obs:i_max]
 
     if not np.allclose(x_mm_sim, options['x_mm_obs']):
         raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
 
     # calculate the chi-squared value from it
+    x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
+    rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
+    rms_weighted = rms / np.sqrt(options['x_mm_obs'] / (2 * np.pi * x_beam_as))
 
-    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], options['dy_mm_obs'])
+    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.maximum(rms_weighted, options['dy_mm_obs']))
 
     # write the detailed scattering matrix files
-
     for i_grain in range(n_a):
         opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
 
@@ -219,7 +227,8 @@ def log_prob(parameters, options, debugging=False):
 
     with output:
         # a bit complicated probably due to difference in pixel center / interface
-        sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (iq_sca_obs.nxpix - 1) * 1.0000000000000286
+        sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
+                    iq_sca_obs.nxpix - 1) * 1.0000000000000286
         radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
@@ -236,9 +245,9 @@ def log_prob(parameters, options, debugging=False):
                      fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1})
     else:
         shutil.move(temp_path, str(temp_path) + "_sca_error")
-        warnings.warn(f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
+        warnings.warn(
+            f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
         output_dict['error'] = "continuum image failed to run"
-        output_dict['params'] = params
         output_dict['radmc_call_sca'] = radmc_call_sca
 
         filename = output_dir / f'run_{temp_number}.pickle'
@@ -282,11 +291,19 @@ def log_prob(parameters, options, debugging=False):
         assert np.allclose(profile_sim['x'][i_sim_0:max_len],
                            profile_obs['x'][i_obs_0:max_len]), 'x arrays do not agree'
 
-        chi_squared += calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
-                                            profile_obs['y'][i_obs_0:max_len],
-                                            profile_obs['dy'][i_obs_0:max_len])
+        x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
+        rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
+                    1 * u.Jy).cgs.value
+        # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
+        rms_sca_weighted = rms_sca / np.sqrt(
+            profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
 
-    logp = -np.log(chi_squared)
+        # divide by 4 because we have 4 sca and one mm profiles
+        chi_squared += 0.25 * calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
+                                                   profile_obs['y'][i_obs_0:max_len],
+                                                   np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
+    # Jeffreys’ prior
+    logp = -np.log(chi_squared) + np.log(parameters[0] * parameters[3] * parameters[5])
 
     # we keep some results stored in a dictionary
 
@@ -310,5 +327,9 @@ def log_prob(parameters, options, debugging=False):
 
     if not debugging:
         shutil.rmtree(temp_path)
+
+    if np.isnan(logp):
+        logging.warning(f"Probability function returned NaN for run ID {temp_number}")
+        return -np.inf, temp_number
 
     return logp, temp_number
