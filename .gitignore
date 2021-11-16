@@ -1,8 +1,7 @@
 /observations/
 /opacities/
-/runs_old/
-/runs/
-/chain.hdf5
+/runs*/
+/chain*.hdf5
 /corner.pdf
 /.idea/
 /testing.ipynb
