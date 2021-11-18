@@ -14,6 +14,7 @@ import astropy.units as u
 import disklab
 import dsharp_opac as opacity
 import numpy as np
+from astropy.io import fits
 from dipsy.utils import Capturing
 from disklab.radmc3d import write
 from gofish import imagecube
@@ -228,22 +229,14 @@ def log_prob(parameters, options, debugging=False):
     with output:
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
-                    iq_sca_obs.nxpix - 1) * 1.0000000000000286
-        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1"
+                iq_sca_obs.nxpix - 1) * 1.0000000000000286
+        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
             path=temp_path,
             executable=str(radmc3d_exec))
 
-    # if image was created: rename and read it in and write it as fits file
-    fname_sca_sim = temp_path / 'image_sca.fits'
-    if (temp_path / 'image.out').is_file():
-        (temp_path / 'image.out').replace(fname_sca_sim.with_suffix('.out'))
-        im = image.readImage(str(fname_sca_sim.with_suffix('.out')))
-        # here we need to shift the pixels to match the scattered light image
-        im.writeFits(str(fname_sca_sim), dpc=options['distance'],
-                     fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1})
-    else:
+    if not (temp_path / 'image.out').is_file():
         shutil.move(temp_path, str(temp_path) + "_sca_error")
         warnings.warn(
             f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
@@ -256,17 +249,69 @@ def log_prob(parameters, options, debugging=False):
 
         return -np.inf, temp_number
 
+    radmc_out = temp_path / 'image_sca.out'
+    (temp_path / 'image.out').replace(radmc_out)
+    for i, _stokes in enumerate(['Q', 'U']):
+        # if image was created: rename and read it in and write it as fits file
+        fname_sca_sim = temp_path / f'image_{_stokes}.fits'
+        im = image.readImage(str(radmc_out))
+        # here we need to shift the pixels to match the scattered light image
+        im.writeFits(str(fname_sca_sim), dpc=options['distance'],
+                     fitsheadkeys={'CRPIX1': iq_sca_obs.nxpix / 2 + 1, 'CRPIX2': iq_sca_obs.nxpix / 2 + 1},
+                     stokes=_stokes)
+
+    # compute Qphi image
+    fname_sca_q_sim = temp_path / 'image_Q.fits'
+    fname_sca_u_sim = temp_path / 'image_U.fits'
+
+    for fname in (fname_sca_q_sim, fname_sca_u_sim):
+        fits.setval(fname, 'CUNIT3', value='Hz')
+        fits.setval(fname, 'BUNIT', value='Jy/pixel')
+
+    with fits.open(fname_sca_q_sim, mode='update') as hdul:
+        # RADMC convention is different than the standard
+        hdul[0].data[0] = -hdul[0].data[0]
+        data_sca_q_sim = hdul[0].data[0]
+        hdul.flush()
+
+    with fits.open(fname_sca_u_sim, mode='update') as hdul:
+        # RADMC convention is different than the standard
+        hdul[0].data[0] = -hdul[0].data[0]
+        data_sca_u_sim = hdul[0].data[0]
+        hdul.flush()
+
+    if fits.getval(fname_sca_q_sim, 'CRPIX1') != fits.getval(fname_sca_u_sim, 'CRPIX1') or \
+            fits.getval(fname_sca_q_sim, 'CRPIX2') != fits.getval(fname_sca_u_sim, 'CRPIX2'):
+        raise ValueError("The simulated Q and U images have a different central pixel")
+
+    x0 = fits.getval(fname_sca_q_sim, 'CRPIX1')
+    y0 = fits.getval(fname_sca_q_sim, 'CRPIX2')
+
+    data_sca_qphi_sim = np.zeros_like(data_sca_q_sim)
+    for i in range(len(data_sca_q_sim)):
+        i = len(data_sca_qphi_sim) - i - 1
+        for j in range(len(data_sca_q_sim[i])):
+            phi = np.arctan((i - x0) / (j - y0))
+            data_sca_qphi_sim[i, j] = data_sca_q_sim[i, j] * np.cos(2 * phi) + data_sca_u_sim[i, j] * np.sin(2 * phi)
+
+    with fits.open(fname_sca_q_sim) as hdul:
+        header = hdul[0].header
+
+    fname_qphi_sim = temp_path / 'image_Qphi.fits'
+    hdu = fits.PrimaryHDU(data_sca_qphi_sim, header=header)
+    hdul = fits.HDUList([hdu])
+    hdul.writeto(fname_qphi_sim)
+
     # read as image cube and copy beam properties from observations
+    iq_qphi_sim = imagecube(str(fname_qphi_sim), FOV=options['clip'])
 
-    iq_sca_sim = imagecube(str(fname_sca_sim), FOV=options['clip'])
-
-    for iq in [iq_sca_obs, iq_sca_sim]:
+    for iq in [iq_sca_obs, iq_qphi_sim]:
         iq.bmaj, iq.bmin, iq.bpa = options['beam_sca']
         iq.beamarea_arcsec = iq._calculate_beam_area_arcsec()
         iq.beamarea_str = iq._calculate_beam_area_str()
 
     profiles_sca_sim = get_normalized_profiles(
-        str(fname_sca_sim),
+        str(fname_qphi_sim),
         clip=options['clip'],
         inc=options['inc'],
         PA=options['PA'],
@@ -293,7 +338,7 @@ def log_prob(parameters, options, debugging=False):
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
         rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
-                    1 * u.Jy).cgs.value
+                1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
             profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
@@ -309,11 +354,11 @@ def log_prob(parameters, options, debugging=False):
 
     output_dict["radmc_call_mm"] = radmc_call_mm
     output_dict["radmc_call_sca"] = radmc_call_sca
-    output_dict["folder_path"] = str(fname_sca_sim)
+    output_dict["folder_path"] = str(temp_path)
     output_dict['iq_mm_obs'] = iq_mm_obs
     output_dict['iq_mm_sim'] = iq_mm_sim
     output_dict['iq_sca_obs'] = iq_sca_obs
-    output_dict['iq_sca_sim'] = iq_sca_sim
+    output_dict['iq_sca_sim'] = iq_qphi_sim
     output_dict['profiles_sca_sim'] = profiles_sca_sim
     output_dict['profiles_sca_obs'] = options['profiles_sca_obs']
     output_dict['x_mm_sim'] = x_mm_sim
@@ -333,3 +378,17 @@ def log_prob(parameters, options, debugging=False):
         return -np.inf, temp_number
 
     return logp, temp_number
+
+
+if __name__ == '__main__':
+    # import warnings
+    # warnings.simplefilter('error', category=RuntimeWarning)
+
+    fname = "options.pickle"
+    with open(fname, "rb") as fb:
+        options = pickle.load(fb)
+
+    # original
+    p0 = [8.84825702, 1.95662302, -0.31526693, 2.10656677, 0.52873744, 0.02382286, -1.10552185]
+    # p0 = [7.0, 0.730, 0.558, 0.017, 0.625, 0.008, 0.050]
+    prob, blob = log_prob(p0, options, debugging=True)
