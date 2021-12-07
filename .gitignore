@@ -9,3 +9,4 @@
 __pycache__/
 options.pickle
 run_model.log
+/standard_scientific.mplstyle

@@ -82,6 +82,8 @@ def make_disklab2d_model(
         ax.loglog(d.r / au, a_max, label='a_max')
         ax.loglog(d.r / au, d2g, label='d2g')
 
+        ax.set_xlabel('radius [au]')
+        ax.set_ylabel('grain size [cm]')
         ax.set_ylim(1e-5, 1e0)
         ax.legend()
 
@@ -96,8 +98,12 @@ def make_disklab2d_model(
     if show_plots:
 
         f, ax = plt.subplots()
-        ax.loglog(d.r / au, d.mean_opacity_planck)
-        ax.loglog(d.r / au, d.mean_opacity_rosseland)
+        ax.loglog(d.r / au, d.mean_opacity_planck, label='mean plack')
+        ax.loglog(d.r / au, d.mean_opacity_rosseland, label='mean rosseland')
+
+        ax.set_xlabel('radius [au]')
+        ax.set_ylabel('mean opacity')
+        ax.legend()
 
     # smooth the mean opacities
 
@@ -110,6 +116,10 @@ def make_disklab2d_model(
 
         f, ax = plt.subplots()
         ax.loglog(d.r / au, d.tmid)
+
+        ax.set_xlabel('radius [au]')
+        ax.set_ylabel(r'T$_{mid}$')
+
 
     # iterate the temperature
 

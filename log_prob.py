@@ -48,7 +48,7 @@ def calculate_chisquared(sim_data, obs_data, error):
     return np.sum((obs_data - sim_data) ** 2 / (error ** 2))
 
 
-def log_prob(parameters, options, debugging=False):
+def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
         "sigma_coeff": parameters[0],  ###
         "sigma_exp": parameters[1],
@@ -61,7 +61,10 @@ def log_prob(parameters, options, debugging=False):
 
     temp_number = random.getrandbits(32)
     output_dir = Path('runs')
-    temp_path = output_dir / f'run_{temp_number}'
+    if run_id is None:
+        temp_path = output_dir / f'run_{temp_number}'
+    else:
+        temp_path = output_dir / f'run_{run_id}'
     temp_path.mkdir(parents=True, exist_ok=True)
 
     output_dict = {}
@@ -69,10 +72,10 @@ def log_prob(parameters, options, debugging=False):
 
     output = Capturing()
 
-    if not ((0 < params['sigma_coeff'] < 1e4) and
+    if not ((0 < params['sigma_coeff'] < 1e2) and
             (-5 < params['sigma_exp'] < 5) and
             (-5 < params['size_exp'] < 5) and
-            (1e-4 < params['amax_coeff'] < 100) and
+            (1e-5 < params['amax_coeff'] < 1) and
             (-5 < params['amax_exp'] < 5) and
             (1e-6 < params['d2g_coeff'] < 1e2) and
             (-5 < params['d2g_exp'] < 5)):
@@ -171,30 +174,35 @@ def log_prob(parameters, options, debugging=False):
         z0=0.0,
         psi=0.0,
         beam=iq_mm_obs.beam,
-        show_plots=False)
+        show_plots=False,
+        dist=options['distance'])
 
     # clip the profiles if they are not of the same length
 
+    x_mm_obs = options['x_mm_obs']
+    y_mm_obs = options['y_mm_obs']
+    dy_mm_obs = options['dy_mm_obs']
+
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
-        i_max = min(len(options['x_mm_obs']), len(x_mm_sim)) - 1
-        i_min_obs = options['x_mm_obs'].searchsorted(1.0)
+        i_max = min(len(x_mm_obs), len(x_mm_sim)) - 1
+        i_min_obs = x_mm_obs.searchsorted(1.0)
         i_min_sim = x_mm_sim.searchsorted(1.0)
         x_mm_sim = x_mm_sim[i_min_sim:i_max]
         y_mm_sim = y_mm_sim[i_min_sim:i_max]
         dy_mm_sim = dy_mm_sim[i_min_sim:i_max]
-        options['x_mm_obs'] = options['x_mm_obs'][i_min_obs:i_max]
-        options['y_mm_obs'] = options['y_mm_obs'][i_min_obs:i_max]
-        options['dy_mm_obs'] = options['dy_mm_obs'][i_min_obs:i_max]
+        x_mm_obs = x_mm_obs[i_min_obs:i_max]
+        y_mm_obs = y_mm_obs[i_min_obs:i_max]
+        dy_mm_obs = dy_mm_obs[i_min_obs:i_max]
 
-    if not np.allclose(x_mm_sim, options['x_mm_obs']):
+    if not np.allclose(x_mm_sim, x_mm_obs):
         raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
 
     # calculate the chi-squared value from it
     x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
-    rms_weighted = rms / np.sqrt(options['x_mm_obs'] / (2 * np.pi * x_beam_as))
+    rms_weighted = rms / np.sqrt(x_mm_obs/ (2 * np.pi * x_beam_as))
 
-    chi_squared = calculate_chisquared(y_mm_sim, options['y_mm_obs'], np.maximum(rms_weighted, options['dy_mm_obs']))
+    chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
 
     # write the detailed scattering matrix files
     for i_grain in range(n_a):
@@ -291,6 +299,8 @@ def log_prob(parameters, options, debugging=False):
     for i in range(len(data_sca_q_sim)):
         i = len(data_sca_qphi_sim) - i - 1
         for j in range(len(data_sca_q_sim[i])):
+            if j == y0:
+                continue
             phi = np.arctan((i - x0) / (j - y0))
             data_sca_qphi_sim[i, j] = data_sca_q_sim[i, j] * np.cos(2 * phi) + data_sca_u_sim[i, j] * np.sin(2 * phi)
 
@@ -339,7 +349,7 @@ def log_prob(parameters, options, debugging=False):
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
         rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
                 1 * u.Jy).cgs.value
-        # in the next line 10 deg is the aperture  of the cones from which we extracted the profiles
+        # in the next line 10 deg is the aperture of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
             profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
 
@@ -361,6 +371,7 @@ def log_prob(parameters, options, debugging=False):
     output_dict['iq_sca_sim'] = iq_qphi_sim
     output_dict['profiles_sca_sim'] = profiles_sca_sim
     output_dict['profiles_sca_obs'] = options['profiles_sca_obs']
+    output_dict['profiles_sca_obs'] = options['profiles_sca_obs']
     output_dict['x_mm_sim'] = x_mm_sim
     output_dict['y_mm_sim'] = y_mm_sim
     output_dict['dy_mm_sim'] = dy_mm_sim
@@ -381,6 +392,15 @@ def log_prob(parameters, options, debugging=False):
 
 
 if __name__ == '__main__':
+    """
+    "sigma_coeff": parameters[0], 
+    "sigma_exp": parameters[1],
+    "size_exp": parameters[2], a**(4 - size_exp) grain size distribution
+    "amax_coeff": parameters[3],  
+    "amax_exp": parameters[4],
+    "d2g_coeff": parameters[5],  
+    "d2g_exp": parameters[6],
+    """
     # import warnings
     # warnings.simplefilter('error', category=RuntimeWarning)
 
@@ -389,6 +409,17 @@ if __name__ == '__main__':
         options = pickle.load(fb)
 
     # original
-    p0 = [8.84825702, 1.95662302, -0.31526693, 2.10656677, 0.52873744, 0.02382286, -1.10552185]
-    # p0 = [7.0, 0.730, 0.558, 0.017, 0.625, 0.008, 0.050]
-    prob, blob = log_prob(p0, options, debugging=True)
+    # p0 = [8.84825702, 1.95662302, -0.31526693, 2.10656677, 0.52873744, 0.02382286, -1.10552185]
+
+    p0 = [10.0, 0.73, 0.0, 10e-4, 0.625, 0.01, 0.0]
+    prob, blob = log_prob(p0, options, debugging=True, run_id='fix_size_10_micron')
+
+    # param_change = np.linspace(-5, 5, 20)
+    # param_change = np.linspace(-5, 0, 10)
+    #
+    # with open('run_results.txt', 'a') as fff:
+    #     for i, _par in enumerate(param_change):
+    #         pars = [7.0, 1.1, 0.7894736842105257, 78.47599703514611, 2.7777777777777777, 0.046415888336127774, -1.6666666666666665]
+    #         pars[6] = _par
+    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p6_{_par:.2f}')
+    #         fff.write(f'p6={_par}, logp={prob}, blob={blob}, pars: {pars}\n')

@@ -72,7 +72,9 @@ x_mm_obs, y_mm_obs, dy_mm_obs = get_profile_from_fits(
     clip=clip,
     inc=disk_params["inc"], PA=disk_params["PA"],
     z0=0.0,
-    psi=0.0)
+    psi=0.0,
+    dist=disk_params['dpc']
+)
 
 # Sphere data
 lam_sca = 1.65e-4
@@ -184,7 +186,7 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 30  # 30
+procs = 8  # 30
 steps = 1000  # 30
 
 if procs > 1:
