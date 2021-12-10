@@ -1,16 +1,14 @@
 import warnings
 from pathlib import Path
 
-import numpy as np
-import matplotlib.pyplot as plt
 import astropy.constants as c
-
-from gofish import imagecube
-import dsharp_opac as opacity
 import disklab
-
-from dipsy.utils import get_interfaces_from_log_cell_centers
+import dsharp_opac as opacity
+import matplotlib.pyplot as plt
+import numpy as np
 from dipsy import get_powerlaw_dust_distribution
+from dipsy.utils import get_interfaces_from_log_cell_centers
+from gofish import imagecube
 
 au = c.au.cgs.value
 M_sun = c.M_sun.cgs.value
@@ -24,19 +22,18 @@ def movingaverage(interval, window_size):
 
 
 def make_disklab2d_model(
-    parameters,
-    mstar,
-    lstar,
-    tstar,
-    nr,
-    alpha,
-    rin,
-    rout,
-    r_c,
-    opac_fname,
-    show_plots=False
+        parameters,
+        mstar,
+        lstar,
+        tstar,
+        nr,
+        alpha,
+        rin,
+        rout,
+        r_c,
+        opac_fname,
+        show_plots=False
 ):
-
     # The different indices in the parameters list correspond to different physical paramters
 
     sigma_coeff = parameters[0]
@@ -60,21 +57,21 @@ def make_disklab2d_model(
     d.make_disk_from_simplified_lbp(sigma_coeff, r_c, sigma_exp)
 
     if d.mass / mstar > 0.2:
-        warnings.warn(f'Disk mass is unreasonably high: M_disk / Mstar = {d.mass/mstar:.2g}')
+        warnings.warn(f'Disk mass is unreasonably high: M_disk / Mstar = {d.mass / mstar:.2g}')
 
     # add the dust, based on the dust-to-gas parameters
 
-    d2g = d2g_coeff * ((d.r / au)**d2g_exp)
-    a_max = amax_coeff * (d.r / au)**(-amax_exp)
+    d2g = d2g_coeff * ((d.r / au) ** d2g_exp)
+    a_max = amax_coeff * (d.r / au) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
-    a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp, na=n_a, a0=a_i[0], a1=a_i[-1])
+    a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
+                                                    na=n_a, a0=a_i[0], a1=a_i[-1])
 
     for _sig, _a in zip(np.transpose(sig_da), a_opac):
         d.add_dust(agrain=_a, xigrain=rho_s, dtg=_sig / d.sigma)
 
     if show_plots:
-
         f, ax = plt.subplots()
 
         ax.contourf(d.r / au, a_opac, np.log10(sig_da.T))
@@ -96,7 +93,6 @@ def make_disklab2d_model(
     d.compute_mean_opacity()
 
     if show_plots:
-
         f, ax = plt.subplots()
         ax.loglog(d.r / au, d.mean_opacity_planck, label='mean plack')
         ax.loglog(d.r / au, d.mean_opacity_rosseland, label='mean rosseland')
@@ -120,9 +116,7 @@ def make_disklab2d_model(
         ax.set_xlabel('radius [au]')
         ax.set_ylabel(r'T$_{mid}$')
 
-
     # iterate the temperature
-
     for iter in range(100):
         d.compute_hsurf()
         d.compute_flareindex()
@@ -143,7 +137,7 @@ def make_disklab2d_model(
     disk2d.radial_raytrace()
     for vert in disk2d.verts:
         vert.solve_vert_rad_diffusion()
-        vert.tgas = (vert.tgas**4 + 15**4)**(1 / 4)
+        vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
         for dust in vert.dust:
             dust.compute_settling_mixing_equilibrium()
 
@@ -188,7 +182,8 @@ def get_normalized_profiles(fname, **kwargs):
     return profiles
 
 
-def get_profile_from_fits(fname, clip=2.5, show_plots=False, inc=0, PA=0, z0=0.0, psi=0.0, beam=None, r_norm=None, norm=None, **kwargs):
+def get_profile_from_fits(fname, clip=2.5, show_plots=False, inc=0, PA=0, z0=0.0, psi=0.0, beam=None, r_norm=None,
+                          norm=None, **kwargs):
     """Get radial profile from fits file.
 
     Reads a fits file and determines a radial profile with `imagecube`
@@ -307,12 +302,12 @@ def azimuthal_profile(cube, n_theta=30, **kwargs):
     tidx = np.digitize(tvals_annulus, tbins)
 
     return bin_centers, \
-        np.array([np.mean(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)]), \
-        np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
+           np.array([np.mean(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)]), \
+           np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
 
 
 def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101):
-    "make optical constants file"
+    """make optical constants file"""
 
     if n_theta // 2 == n_theta / 2:
         n_theta += 1
@@ -347,12 +342,12 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
         opac_dict = read_opacs(opac_fname)
 
         if (
-            (len(opac_dict['a']) == n_a) and
-            np.allclose(opac_dict['a'], a) and
-            (len(opac_dict['lam']) == n_lam) and
-            np.allclose(opac_dict['lam'], lam) and
-            (len(opac_dict['theta']) == n_theta) and
-            (opac_dict['rho_s'] == rho_s)
+                (len(opac_dict['a']) == n_a) and
+                np.allclose(opac_dict['a'], a) and
+                (len(opac_dict['lam']) == n_lam) and
+                np.allclose(opac_dict['lam'], lam) and
+                (len(opac_dict['theta']) == n_theta) and
+                (opac_dict['rho_s'] == rho_s)
         ):
             print(f'reading from file {opac_fname}')
             run_opac = False
@@ -409,7 +404,7 @@ def chop_forward_scattering(opac_dict, chopforward=5):
     rho_s = opac_dict['rho_s']
     lam = opac_dict['lam']
     a = opac_dict['a']
-    m = 4 * np.pi / 3 * rho_s * a**3
+    m = 4 * np.pi / 3 * rho_s * a ** 3
 
     n_a = len(a)
     n_lam = len(lam)

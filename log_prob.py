@@ -72,15 +72,18 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     output = Capturing()
 
+    #  the grain distribution characteristic radius is 1 au, so the grain size coefficient doesn't have a physical
+    #  meaning. Need to change it to a more reasonable value
     if not ((0 < params['sigma_coeff'] < 1e2) and
             (-5 < params['sigma_exp'] < 5) and
             (-5 < params['size_exp'] < 5) and
-            (1e-5 < params['amax_coeff'] < 1) and
+            (1e-5 < params['amax_coeff'] < 1e5) and
             (-5 < params['amax_exp'] < 5) and
             (1e-6 < params['d2g_coeff'] < 1e2) and
             (-5 < params['d2g_exp'] < 5)):
         print("Parameters out of prior")
         return -np.Inf, -1
+
     # else:
     #     logP = - np.log(grain_size) - np.log(disk_mass) - np.log(d2g)
 
@@ -200,7 +203,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     # calculate the chi-squared value from it
     x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
-    rms_weighted = rms / np.sqrt(x_mm_obs/ (2 * np.pi * x_beam_as))
+    rms_weighted = rms / np.sqrt(x_mm_obs / (2 * np.pi * x_beam_as))
 
     chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
 
@@ -377,7 +380,11 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output_dict['dy_mm_sim'] = dy_mm_sim
 
     # store the pickled dictionary
-    filename = output_dir / f'run_{temp_number}.pickle'
+    if run_id is None:
+        filename = output_dir / f'run_{temp_number}.pickle'
+    else:
+        filename = output_dir / f'run_{run_id}.pickle'
+
     with filename.open('wb') as fn:
         pickle.dump(output_dict, fn)
 
@@ -405,14 +412,14 @@ if __name__ == '__main__':
     # warnings.simplefilter('error', category=RuntimeWarning)
 
     fname = "options.pickle"
+
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
 
     # original
-    # p0 = [8.84825702, 1.95662302, -0.31526693, 2.10656677, 0.52873744, 0.02382286, -1.10552185]
+    p0 = [4.0, 1.1, 0.1, 500, 2.7777777777777777, 0.046415888336127774, -1.1111111111111107]
 
-    p0 = [10.0, 0.73, 0.0, 10e-4, 0.625, 0.01, 0.0]
-    prob, blob = log_prob(p0, options, debugging=True, run_id='fix_size_10_micron')
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
 
     # param_change = np.linspace(-5, 5, 20)
     # param_change = np.linspace(-5, 0, 10)

@@ -1,9 +1,9 @@
 import getpass
+import logging
 import pickle
 import shutil
 from multiprocessing import Pool
 from pathlib import Path
-import logging
 
 import astropy.constants as c
 import astropy.units as u
@@ -13,11 +13,11 @@ import emcee
 import numpy as np
 from astropy.io import fits
 
-from log_prob import log_prob
 from helper_functions import chop_forward_scattering
 from helper_functions import get_normalized_profiles
 from helper_functions import get_profile_from_fits
 from helper_functions import make_opacs
+from log_prob import log_prob
 
 # np.seterr(all='raise')
 logging.basicConfig(filename='run_model.log', filemode='w', level=logging.DEBUG)
@@ -45,7 +45,7 @@ disklab_grid = {
 
 # physical parameters
 disk_params = {
-    "r_c": 300 * au,  # not sure where this value comes from
+    "r_c": 100 * au,  # from Zhang+ 2021, was 300, not sure where this value came from
     "z0": 0.2,
     "psi": 1.27,
 
