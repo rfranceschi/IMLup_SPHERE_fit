@@ -114,11 +114,15 @@ profiles_sca_obs = get_normalized_profiles(
 )
 
 # Opacities
+# TODOtry new and old a1, and n_a = 50, mostly small grains (constant size). Hopefully nothing changes as 50 sizes are
+#  a lot
+# TODOdo the same with n_a = 15, with new a_1, should still look the same. The old a_1 should look different as we
+#  under-sample the grain distribution
 
 # Define the wavelength, size, and angle grids then calculate opacities and store them in a local file,
 # if it doesn't exist yet. Careful, that takes of the order of >2h
 n_lam = 200  # number of wavelength points
-n_a = 15  # number of particle sizes
+n_a = 50  # number of particle sizes
 n_theta = 181  # number of angles in the scattering phase function
 porosity = 0.3
 
@@ -186,8 +190,8 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 8  # 30
-steps = 1000  # 30
+procs = 4  # 30
+steps = 8  # 30
 
 if procs > 1:
     # Parallelize the simulation

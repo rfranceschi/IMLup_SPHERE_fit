@@ -67,13 +67,10 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         temp_path = output_dir / f'run_{run_id}'
     temp_path.mkdir(parents=True, exist_ok=True)
 
-    output_dict = {}
-    output_dict['params'] = params
+    output_dict = {'params': params}
 
     output = Capturing()
 
-    #  the grain distribution characteristic radius is 1 au, so the grain size coefficient doesn't have a physical
-    #  meaning. Need to change it to a more reasonable value
     if not ((0 < params['sigma_coeff'] < 1e2) and
             (-5 < params['sigma_exp'] < 5) and
             (-5 < params['size_exp'] < 5) and
@@ -105,7 +102,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         options['rout'],
         options['r_c'],
         options['fname_opac'],
-        show_plots=False
+        show_plots=True
     )
 
     print(f'disk to star mass ratio = {disk2d.disk.mass / disk2d.disk.mstar:.2g}')
@@ -132,7 +129,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     fname_mm_sim = temp_path / 'image_mm.fits'
 
     with output:
-        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} secondorder  setthreads 1"
+        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} secondorder  setthreads 4"
         disklab.radmc3d.radmc3d(
             radmc_call_mm,
             path=temp_path,
@@ -208,8 +205,11 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
 
     # write the detailed scattering matrix files
+    a_grid = np.sort([dust.grain.agrain for dust in disk2d.verts[0].dust])
+    n_a = len(a_grid)
     for i_grain in range(n_a):
-        opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
+        # opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
+        opacity.dsharp_opac.interpolate_radmc3d_scatmat_file(a_grid[i_grain], opac_dict, f'{i_grain}', path=temp_path)
 
     with open(Path(temp_path) / 'dustopac.inp', 'w') as f:
         write(f, '2               Format number of this file')
@@ -241,7 +241,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
                 iq_sca_obs.nxpix - 1) * 1.0000000000000286
-        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1 stokes"
+        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 4 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
             path=temp_path,
@@ -417,16 +417,26 @@ if __name__ == '__main__':
         options = pickle.load(fb)
 
     # original
-    p0 = [4.0, 1.1, 0.1, 500, 2.7777777777777777, 0.046415888336127774, -1.1111111111111107]
+    # p0 = [7.0, 1.1, 4.473684210526315, 0.017, 0.625, 0.01, 0.0]
+
+    p0 = [28.4,
+          0.8,
+          0.7894736842105257,
+          0.5,
+          1.7777777777777777,
+          0.08,
+          -0.0001]
+
+    p0[3] = options['lam_mm'] / (2 * np.pi)
 
     prob, blob = log_prob(p0, options, debugging=True, run_id='test')
 
-    # param_change = np.linspace(-5, 5, 20)
-    # param_change = np.linspace(-5, 0, 10)
+    # param_change = np.linspace(30, 100, 7)
+    # param_id = 0
     #
-    # with open('run_results.txt', 'a') as fff:
+    # with open('run_results_100rc.txt', 'a') as fff:
     #     for i, _par in enumerate(param_change):
     #         pars = [7.0, 1.1, 0.7894736842105257, 78.47599703514611, 2.7777777777777777, 0.046415888336127774, -1.6666666666666665]
-    #         pars[6] = _par
-    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p6_{_par:.2f}')
-    #         fff.write(f'p6={_par}, logp={prob}, blob={blob}, pars: {pars}\n')
+    #         pars[param_id] = _par
+    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p{param_id}_{_par:.2f}')
+    #         fff.write(f'p{param_id}={_par}, logp={prob}, blob={blob}, pars: {pars}\n')

@@ -6,7 +6,7 @@ import disklab
 import dsharp_opac as opacity
 import matplotlib.pyplot as plt
 import numpy as np
-from dipsy import get_powerlaw_dust_distribution
+# from dipsy import get_powerlaw_dust_distribution
 from dipsy.utils import get_interfaces_from_log_cell_centers
 from gofish import imagecube
 
@@ -14,6 +14,51 @@ au = c.au.cgs.value
 M_sun = c.M_sun.cgs.value
 L_sun = c.L_sun.cgs.value
 R_sun = c.R_sun.cgs.value
+
+
+def get_powerlaw_dust_distribution(sigma_d, a_max, q=3.5, na=10, a0=None, a1=None):
+    if a0 is None:
+        a0 = a_max.min()
+
+    if a1 is None:
+        a1 = 2 * a_max.max()
+
+    nr = len(sigma_d)
+    sig_da = np.zeros([nr, na]) + 1e-100
+
+    a_i = np.logspace(np.log10(a0), np.log10(a1), na + 1)
+    a = 0.5 * (a_i[1:] + a_i[:-1])
+
+    for ir in range(nr):
+
+        if a_max[ir] <= a0:
+            sig_da[ir, 0] = 1
+        else:
+            i_up = np.where(a_i <= a_max[ir])[0][-1]
+            # filling all bins that are strictly below a_max
+
+            if q == 4.0:
+                continue
+                # for ia in range(i_up):
+                #     sig_da[ir, ia] = np.log(a_i[ia + 1] / a_i[ia])
+                #
+                # # filling the bin that contains a_max
+                # sig_da[ir, i_up] = np.log(a_max[ir] / a_i[i_up])
+            else:
+                for ia in range(i_up - 1):
+                    sig_da[ir, ia] = a_i[ia + 1] ** (4 - q) - a_i[ia] ** (4 - q)
+
+                # filling the bin that contains a_max
+                if i_up < 1:
+                    print(f'ir {ir} i_up {i_up}')
+                if i_up >= 1:
+                    sig_da[ir, i_up - 1] = a_max[ir] ** (4 - q) - a_i[i_up] ** (4 - q)
+
+        # normalize
+
+        sig_da[ir, :] = sig_da[ir, :] / sig_da[ir, :].sum() * sigma_d[ir]
+
+    return a, a_i, sig_da
 
 
 def movingaverage(interval, window_size):
@@ -60,21 +105,28 @@ def make_disklab2d_model(
         warnings.warn(f'Disk mass is unreasonably high: M_disk / Mstar = {d.mass / mstar:.2g}')
 
     # add the dust, based on the dust-to-gas parameters
-
-    d2g = d2g_coeff * ((d.r / au) ** d2g_exp)
-    a_max = amax_coeff * (d.r / au) ** (-amax_exp)
+    d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp)  # * np.exp(-(d.r / (300 * au))**3)
+    a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)  # * np.exp(-(d.r / (300 * au))**3)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
-    a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
-                                                    na=n_a, a0=a_i[0], a1=a_i[-1])
 
-    for _sig, _a in zip(np.transpose(sig_da), a_opac):
+    indexes_outer_disk = np.asarray(d.r > 100 * au).nonzero()
+    a0 = a_i[0]
+    a1 = np.max(a_max[indexes_outer_disk])
+    a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
+                                                    na=n_a, a0=a0, a1=a1)
+    if np.isclose(a[0], a_opac[0]):
+        a[0] = a_opac[0]
+    if np.isclose(a[-1], a_opac[-1]):
+        a[-1] = a_opac[-1]
+
+    for _sig, _a in zip(np.transpose(sig_da), a):
         d.add_dust(agrain=_a, xigrain=rho_s, dtg=_sig / d.sigma)
 
     if show_plots:
         f, ax = plt.subplots()
 
-        ax.contourf(d.r / au, a_opac, np.log10(sig_da.T))
+        ax.contourf(d.r / au, a, np.log10(sig_da.T))
 
         ax.loglog(d.r / au, a_max, label='a_max')
         ax.loglog(d.r / au, d2g, label='d2g')
