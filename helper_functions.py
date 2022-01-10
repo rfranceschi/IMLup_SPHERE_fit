@@ -111,8 +111,9 @@ def make_disklab2d_model(
     a_i = get_interfaces_from_log_cell_centers(a_opac)
 
     indexes_outer_disk = np.asarray(d.r > 100 * au).nonzero()
-    a0 = a_i[0]
+    a0 = a_opac[0]
     a1 = np.max(a_max[indexes_outer_disk])
+    a1 = np.minimum(a1, a_opac[-1])
     a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
                                                     na=n_a, a0=a0, a1=a1)
     if np.isclose(a[0], a_opac[0]):

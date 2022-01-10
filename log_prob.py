@@ -248,7 +248,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             executable=str(radmc3d_exec))
 
     if not (temp_path / 'image.out').is_file():
-        shutil.move(temp_path, str(temp_path) + "_sca_error")
+        shutil.move(str(temp_path), str(temp_path) + "_sca_error")
         warnings.warn(
             f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
         output_dict['error'] = "continuum image failed to run"

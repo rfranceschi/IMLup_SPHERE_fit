@@ -122,7 +122,7 @@ profiles_sca_obs = get_normalized_profiles(
 # Define the wavelength, size, and angle grids then calculate opacities and store them in a local file,
 # if it doesn't exist yet. Careful, that takes of the order of >2h
 n_lam = 200  # number of wavelength points
-n_a = 50  # number of particle sizes
+n_a = 15  # number of particle sizes
 n_theta = 181  # number of angles in the scattering phase function
 porosity = 0.3
 
@@ -193,11 +193,11 @@ backend = emcee.backends.HDFBackend(filename)
 procs = 4  # 30
 steps = 8  # 30
 
-if procs > 1:
-    # Parallelize the simulation
-    with Pool(processes=procs) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
-        res = sampler.run_mcmc(p0, steps, progress=True, store=True)
-else:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
-    res = sampler.run_mcmc(p0, steps, progress=True, store=True)
+# if procs > 1:
+#     # Parallelize the simulation
+#     with Pool(processes=procs) as pool:
+#         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
+#         res = sampler.run_mcmc(p0, steps, progress=True, store=True)
+# else:
+#     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
+#     res = sampler.run_mcmc(p0, steps, progress=True, store=True)
