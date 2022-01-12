@@ -61,8 +61,8 @@ def make_disklab2d_model(
 
     # add the dust, based on the dust-to-gas parameters
 
-    d2g = d2g_coeff * ((d.r / au) ** d2g_exp)
-    a_max = amax_coeff * (d.r / au) ** (-amax_exp)
+    d2g = d2g_coeff * ((d.r / (300 *au)) ** d2g_exp)
+    a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
     a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
