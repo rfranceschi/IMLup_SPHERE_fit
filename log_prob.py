@@ -108,6 +108,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         show_plots=False
     )
 
+    output_dict['disk2d'] = disk2d
+
     print(f'disk to star mass ratio = {disk2d.disk.mass / disk2d.disk.mstar:.2g}')
 
     # read the wavelength grid from the opacity file and write out radmc setup
@@ -378,6 +380,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output_dict['x_mm_sim'] = x_mm_sim
     output_dict['y_mm_sim'] = y_mm_sim
     output_dict['dy_mm_sim'] = dy_mm_sim
+    output_dict['logp'] = logp
 
     # store the pickled dictionary
     if run_id is None:
@@ -416,17 +419,32 @@ if __name__ == '__main__':
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
 
+    options['fname_opac'] = 'opacities/dustkappa_IMLUP_chopped.npz'
+
+    a_max_300 = options['lam_mm'] / (2 * np.pi)
+
     # original
-    p0 = [4.0, 1.1, 0.1, 500, 2.7777777777777777, 0.046415888336127774, -1.1111111111111107]
+    p0 = [28.4,  # sigma_coeff
+          1.0,  # sigma_exp
+          0.1,  # size_exp  a**(4 - size_exp) grain size distribution
+          a_max_300,  # amax_coeff
+          1.5,  # amax_exp
+          0.02,  # d2g_coeff
+          -1.3,  # d2g_exp
+          ]
+    p0[2] = 0.6625
+    p0[4] = 0.1
+    p0[5] = 0.0703
+    p0[6] = -1.7625
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
+    param_change = np.linspace(0.1, 1, 8, endpoint=False)
+    param_index = 2
 
-    # param_change = np.linspace(-5, 5, 20)
-    # param_change = np.linspace(-5, 0, 10)
-    #
+    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test_porosity_0')
+
     # with open('run_results.txt', 'a') as fff:
     #     for i, _par in enumerate(param_change):
-    #         pars = [7.0, 1.1, 0.7894736842105257, 78.47599703514611, 2.7777777777777777, 0.046415888336127774, -1.6666666666666665]
-    #         pars[6] = _par
-    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p6_{_par:.2f}')
-    #         fff.write(f'p6={_par}, logp={prob}, blob={blob}, pars: {pars}\n')
+    #         pars = p0
+    #         pars[param_index] = _par
+    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p{param_index}_{_par:.2f}')
+    #         fff.write(f'p{param_index}={_par}, logp={prob}, blob={blob}, pars: {pars}\n')

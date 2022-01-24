@@ -61,10 +61,14 @@ def make_disklab2d_model(
 
     # add the dust, based on the dust-to-gas parameters
 
-    d2g = d2g_coeff * ((d.r / (300 *au)) ** d2g_exp)
+    d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp)
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
+    # if we change a0 and a1 we have a different grid than a_opac, and the interpolation creates the wrong g parameter
+    #   increase the number of grain size in the opac file
+    #   OR we take ~150 grain sizes in the opac file and then interpolate 15 grains for radmc3d (change a1 in the next
+    #   call). Radmc will still complain though, we would have to recalculate g.
     a, a_i, sig_da = get_powerlaw_dust_distribution(d.sigma * d2g, np.minimum(a_opac[-1], a_max), q=4 - size_exp,
                                                     na=n_a, a0=a_i[0], a1=a_i[-1])
 
