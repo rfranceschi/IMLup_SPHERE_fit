@@ -253,13 +253,15 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         shutil.move(temp_path, str(temp_path) + "_sca_error")
         warnings.warn(
             f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
-        output_dict['error'] = "continuum image failed to run"
+        output_dict['error'] = "scattered image failed to run"
+        output_dict['output'] = output.copy()
         output_dict['radmc_call_sca'] = radmc_call_sca
 
-        filename = output_dir / f'run_{temp_number}.pickle'
+        filename = output_dir / f'run_{run_id}.pickle'
         with filename.open('wb') as fn:
             pickle.dump(output_dict, fn)
 
+        raise ValueError('breakpoint')
         return -np.inf, temp_number
 
     radmc_out = temp_path / 'image_sca.out'
@@ -401,7 +403,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     return logp, temp_number
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
+def main():
     """
     "sigma_coeff": parameters[0], 
     "sigma_exp": parameters[1],
@@ -419,7 +422,7 @@ if __name__ == '__main__':
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
 
-    options['fname_opac'] = 'opacities/dustkappa_IMLUP_chopped.npz'
+    options['fname_opac'] = 'opacities_30/dustkappa_IMLUP_p30_chopped.npz'
 
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
@@ -440,7 +443,8 @@ if __name__ == '__main__':
     param_change = np.linspace(0.1, 1, 8, endpoint=False)
     param_index = 2
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test_porosity_0')
+    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test_30')
+    print(prob)
 
     # with open('run_results.txt', 'a') as fff:
     #     for i, _par in enumerate(param_change):
@@ -448,3 +452,7 @@ if __name__ == '__main__':
     #         pars[param_index] = _par
     #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p{param_index}_{_par:.2f}')
     #         fff.write(f'p{param_index}={_par}, logp={prob}, blob={blob}, pars: {pars}\n')
+
+
+if __name__ == '__main__':
+    main()
