@@ -10,3 +10,8 @@ __pycache__/
 options.pickle
 run_model.log
 /standard_scientific.mplstyle
+/opacities_*/
+/old_runs/
+/img/
+.DS_Store
+/*.picklegit
