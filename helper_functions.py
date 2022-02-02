@@ -136,14 +136,41 @@ def make_disklab2d_model(
         nz=100)
 
     # taken from snippet vertstruc 2d_1
+    # for vert in disk2d.verts:
+    #     vert.iterate_vertical_structure()
+    # disk2d.radial_raytrace()
+    # for vert in disk2d.verts:
+    #     vert.solve_vert_rad_diffusion()
+    #     vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
+    #     for dust in vert.dust:
+    #         dust.compute_settling_mixing_equilibrium()
+
+    # our own vertical structure, here we turn of viscous heating
+
     for vert in disk2d.verts:
-        vert.iterate_vertical_structure()
+        vert.compute_mean_opacity()
+        vert.irradiate_with_flaring_index()
+
     disk2d.radial_raytrace()
-    for vert in disk2d.verts:
-        vert.solve_vert_rad_diffusion()
-        vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
-        for dust in vert.dust:
-            dust.compute_settling_mixing_equilibrium()
+
+    n_iter = 10
+    for iter in range(n_iter):
+        disk2d.radial_raytrace()
+        for vert in disk2d.verts:
+            vert.compute_rhogas_hydrostatic()
+            vert.compute_mean_opacity()
+            vert.irradiate_with_flaring_index()
+
+            # this line turns viscous heating OFF:
+            vert.visc_src = np.zeros_like(vert.z)
+
+            # this line turns viscous heating ON:
+            # vert.compute_viscous_heating()
+
+            vert.solve_vert_rad_diffusion()
+            vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
+            for dust in vert.dust:
+                dust.compute_settling_mixing_equilibrium()
 
     # --- done setting up the radmc3d model ---
     return disk2d
@@ -306,8 +333,8 @@ def azimuthal_profile(cube, n_theta=30, **kwargs):
     tidx = np.digitize(tvals_annulus, tbins)
 
     return bin_centers, \
-           np.array([np.mean(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)]), \
-           np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
+        np.array([np.mean(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)]), \
+        np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
 
 
 def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101):

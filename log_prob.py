@@ -50,12 +50,12 @@ def calculate_chisquared(sim_data, obs_data, error):
 
 def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
-        "sigma_coeff": parameters[0],  ###
+        "sigma_coeff": parameters[0],
         "sigma_exp": parameters[1],
         "size_exp": parameters[2],
-        "amax_coeff": parameters[3],  ####
+        "amax_coeff": parameters[3],
         "amax_exp": parameters[4],
-        "d2g_coeff": parameters[5],  #####
+        "d2g_coeff": parameters[5],
         "d2g_exp": parameters[6],
     }
 
@@ -242,7 +242,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     with output:
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
-                iq_sca_obs.nxpix - 1) * 1.0000000000000286
+            iq_sca_obs.nxpix - 1) * 1.0000000000000286
         radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
@@ -250,7 +250,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             executable=str(radmc3d_exec))
 
     if not (temp_path / 'image.out').is_file():
-        shutil.move(temp_path, str(temp_path) + "_sca_error")
+        shutil.move(str(temp_path), str(temp_path) + "_sca_error")
         warnings.warn(
             f"scattered light image failed to run, folder copied to {str(temp_path) + '_sca_error'}, radmc3d call was {radmc_call_sca}")
         output_dict['error'] = "scattered image failed to run"
@@ -355,7 +355,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
         rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
-                1 * u.Jy).cgs.value
+            1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
             profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
@@ -421,8 +421,6 @@ def main():
 
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
-
-    options['fname_opac'] = 'opacities_30/dustkappa_IMLUP_p30_chopped.npz'
 
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 

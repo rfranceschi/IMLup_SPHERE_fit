@@ -119,12 +119,15 @@ profiles_sca_obs = get_normalized_profiles(
 # Define the wavelength, size, and angle grids then calculate opacities and store them in a local file,
 # if it doesn't exist yet. Careful, that takes of the order of >2h
 n_lam = 200  # number of wavelength points
-n_a = 15  # number of particle sizes
+n_a = 30  # number of particle sizes
 n_theta = 181  # number of angles in the scattering phase function
 porosity = 0.3
 
 # wavelength and particle sizes grids
 lam_opac = np.logspace(-5, 1, n_lam)
+# we insert the scattered light wavelength to be sure we don't need interpolation
+ilam = np.abs(lam_opac - lam_sca).argmin()
+lam_opac[ilam] = lam_sca
 a_opac = np.logspace(-5, 1, n_a)
 
 # make opacities if necessary
