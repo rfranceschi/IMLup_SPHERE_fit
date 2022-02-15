@@ -39,7 +39,7 @@ disk = 'IMLup'
 
 # disklab grid
 disklab_grid = {
-    "nr": 250,
+    "nr": 100,
     "rin": 0.1 * au,
     "rout": 400 * au,  # 400au from avenhaus paper  #DSHARP Huang 2018 says 290 au
 }
