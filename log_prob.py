@@ -124,6 +124,22 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     #    warnings.warn("Index error in write_radmc3d")
     #    return -np.Inf, "Index error in write_radmc3d"
 
+    # write the detailed scattering matrix files
+    for i_grain in range(n_a):
+        opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
+
+    with open(Path(temp_path) / 'dustopac.inp', 'w') as f:
+        write(f, '2               Format number of this file')
+        write(f, '{}              Nr of dust species'.format(n_a))
+
+        for i_grain in range(n_a):
+            write(f, '============================================================================')
+            write(f, '10               Way in which this dust species is read')
+            write(f, '0               0=Thermal grain')
+            write(f, '{}              Extension of name of dustscatmat_***.inp file'.format(i_grain))
+
+        write(f, '----------------------------------------------------------------------------')
+
     # read the real disk images
 
     iq_mm_obs = imagecube(str(options['fname_mm_obs']), FOV=options['clip'])
@@ -134,7 +150,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     fname_mm_sim = temp_path / 'image_mm.fits'
 
     with output:
-        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} secondorder  setthreads 1"
+        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} setthreads 1"
         disklab.radmc3d.radmc3d(
             radmc_call_mm,
             path=temp_path,
@@ -208,34 +224,6 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     rms_weighted = rms / np.sqrt(x_mm_obs / (2 * np.pi * x_beam_as))
 
     chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
-
-    # write the detailed scattering matrix files
-    for i_grain in range(n_a):
-        opacity.write_radmc3d_scatmat_file(i_grain, opac_dict, f'{i_grain}', path=temp_path)
-
-    with open(Path(temp_path) / 'dustopac.inp', 'w') as f:
-        write(f, '2               Format number of this file')
-        write(f, '{}              Nr of dust species'.format(n_a))
-
-        for i_grain in range(n_a):
-            write(f, '============================================================================')
-            write(f, '10               Way in which this dust species is read')
-            write(f, '0               0=Thermal grain')
-            write(f, '{}              Extension of name of dustscatmat_***.inp file'.format(i_grain))
-
-        write(f, '----------------------------------------------------------------------------')
-
-    # update the radmc3d.inp file to account for this scattering mode
-
-    disklab.radmc3d.write_radmc3d_input(
-        {
-            'scattering_mode': 5,
-            'scattering_mode_max': 5,  # was 5 (most realistic scattering), 1 is isotropic
-            'nphot': 10000000,
-            'dust_2daniso_nphi': '60',
-            'mc_scat_maxtauabs': '5.d0',
-        },
-        path=temp_path)
 
     # call RADMC-3D to calculate sphere image
 
@@ -406,12 +394,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 # if __name__ == '__main__':
 def main():
     """
-    "sigma_coeff": parameters[0], 
+    "sigma_coeff": parameters[0],
     "sigma_exp": parameters[1],
     "size_exp": parameters[2], a**(4 - size_exp) grain size distribution
-    "amax_coeff": parameters[3],  
+    "amax_coeff": parameters[3],
     "amax_exp": parameters[4],
-    "d2g_coeff": parameters[5],  
+    "d2g_coeff": parameters[5],
     "d2g_exp": parameters[6],
     """
     # import warnings
@@ -429,20 +417,13 @@ def main():
           1.0,  # sigma_exp
           0.1,  # size_exp  a**(4 - size_exp) grain size distribution
           a_max_300,  # amax_coeff
-          1.5,  # amax_exp
-          0.02,  # d2g_coeff
-          -1.3,  # d2g_exp
+          0.1,  # amax_exp
+          0.0703,  # d2g_coeff
+          -1.7625,  # d2g_exp
           ]
-    p0[2] = 0.6625
-    p0[4] = 0.1
-    p0[5] = 0.0703
-    p0[6] = -1.7625
 
-    param_change = np.linspace(0.1, 1, 8, endpoint=False)
-    param_index = 2
-
-    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test_30')
-    print(prob)
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test_30')
+    print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:
     #     for i, _par in enumerate(param_change):

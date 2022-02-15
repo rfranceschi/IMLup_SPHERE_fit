@@ -521,7 +521,7 @@ def write_radmc3d(disk2d, lam, path, show_plots=False, nphot=10000000):
     disklab.radmc3d.write_radmc3d_input(
         {
             'scattering_mode': 5,
-            'scattering_mode_max': 1,  # was 5 (most realistic scattering), 1 is isotropic
+            'scattering_mode_max': 5,  # was 5 (most realistic scattering), 1 is isotropic
             'nphot': nphot,
             'dust_2daniso_nphi': '60',
             'mc_scat_maxtauabs': '5.d0',
