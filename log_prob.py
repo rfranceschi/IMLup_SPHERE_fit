@@ -67,13 +67,10 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         temp_path = output_dir / f'run_{run_id}'
     temp_path.mkdir(parents=True, exist_ok=True)
 
-    output_dict = {}
-    output_dict['params'] = params
+    output_dict = {'params': params}
 
     output = Capturing()
 
-    #  the grain distribution characteristic radius is 1 au, so the grain size coefficient doesn't have a physical
-    #  meaning. Need to change it to a more reasonable value
     if not ((0 < params['sigma_coeff'] < 1e2) and
             (-5 < params['sigma_exp'] < 5) and
             (-5 < params['size_exp'] < 5) and
