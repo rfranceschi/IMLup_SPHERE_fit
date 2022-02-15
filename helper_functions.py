@@ -61,7 +61,7 @@ def make_disklab2d_model(
 
     # add the dust, based on the dust-to-gas parameters
 
-    d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(3))
+    d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
@@ -133,7 +133,7 @@ def make_disklab2d_model(
     disk2d = disklab.Disk2D(
         disk=d,
         meanopacitymodel=d.meanopacitymodel,
-        nz=100)
+        nz=200)
 
     # taken from snippet vertstruc 2d_1
     # for vert in disk2d.verts:

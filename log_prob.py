@@ -134,7 +134,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     fname_mm_sim = temp_path / 'image_mm.fits'
 
     with output:
-        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} secondorder  setthreads 1"
+        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} setthreads 1"
         disklab.radmc3d.radmc3d(
             radmc_call_mm,
             path=temp_path,
@@ -148,6 +148,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         im_mm_sim = image.readImage(str(radmc_image_path))
         radmc_image_path.replace(temp_path / 'image_mm.out')
         im_mm_sim.writeFits(str(fname_mm_sim), dpc=options['distance'], coord='15h56m09.17658s -37d56m06.1193s')
+        shutil.copy(temp_path / 'dustopac.inp', temp_path / 'dustopac_mm.inp')
     else:
         shutil.move(temp_path, str(temp_path) + "_mm_error")
         warnings.warn(
@@ -242,7 +243,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     with output:
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
-            iq_sca_obs.nxpix - 1) * 1.0000000000000286
+                iq_sca_obs.nxpix - 1) * 1.0000000000000286
         radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
@@ -355,7 +356,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
         rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
-            1 * u.Jy).cgs.value
+                1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
             profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
@@ -421,28 +422,28 @@ def main():
 
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
+    print(options['fname_opac'])
 
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
     # original
     p0 = [28.4,  # sigma_coeff
           1.0,  # sigma_exp
-          0.1,  # size_exp  a**(4 - size_exp) grain size distribution
+          0.6625,  # size_exp  a**(4 - size_exp) grain size distribution
           a_max_300,  # amax_coeff
-          1.5,  # amax_exp
-          0.02,  # d2g_coeff
-          -1.3,  # d2g_exp
+          0.1,  # amax_exp
+          0.0703,  # d2g_coeff
+          -1.7625,  # d2g_exp
           ]
-    p0[2] = 0.6625
-    p0[4] = 0.1
-    p0[5] = 0.0703
-    p0[6] = -1.7625
+
+    # p0 = [41.15140807565287, 0.8657383239099591, 0.7695268761895192, 0.028748628262625923, 1.2466172250629093,
+    #       0.01605818708594799, -1.6285094353139833]
+
+    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test')
+    print(prob)
 
     param_change = np.linspace(0.1, 1, 8, endpoint=False)
     param_index = 2
-
-    prob, blob = log_prob(p0, options, debugging=True, run_id=f'test_30')
-    print(prob)
 
     # with open('run_results.txt', 'a') as fff:
     #     for i, _par in enumerate(param_change):

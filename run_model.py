@@ -39,7 +39,7 @@ disk = 'IMLup'
 
 # disklab grid
 disklab_grid = {
-    "nr": 100,
+    "nr": 250,
     "rin": 0.1 * au,
     "rout": 400 * au,  # 400au from avenhaus paper  #DSHARP Huang 2018 says 290 au
 }
@@ -126,8 +126,11 @@ porosity = 0.3
 # wavelength and particle sizes grids
 lam_opac = np.logspace(-5, 1, n_lam)
 # we insert the scattered light wavelength to be sure we don't need interpolation
+ilam = np.abs(lam_opac - lam_mm).argmin()
+lam_opac[ilam] = lam_sca
 ilam = np.abs(lam_opac - lam_sca).argmin()
 lam_opac[ilam] = lam_sca
+
 a_opac = np.logspace(-5, 1, n_a)
 
 # make opacities if necessary
@@ -168,8 +171,6 @@ options = {'disk': disk, 'PA': disk_params['PA'], 'inc': disk_params['inc'], 'di
 
 pickle.dump(options, open("options.pickle", "wb"))
 
-sys.exit(0)
-
 # Emcee
 # Here we define some inputs and initial parameter sets for the optimization
 
@@ -178,13 +179,23 @@ nwalkers = 30  # it  does not work with fewer  walkers than the number  of dimen
 ndim = 7
 
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
-sigma_coeff_0 = 10 ** ((np.random.rand(nwalkers) - 0.5) * 4)
-others_0 = np.random.rand(ndim - 3, nwalkers)
-d2g_coeff_0 = (np.random.rand(nwalkers) + 0.5) / 100
-d2g_exp_0 = (np.random.rand(nwalkers) - 0.5)
+sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
+sigma_exp_0 =  np.random.normal(1,  0.3, nwalkers)
+size_exp_0 = np.abs(np.random.normal(0.3, 0.1, nwalkers))
+a_max_0 = np.random.normal(0.02, 0.002, nwalkers)
+a_max_exp_0 = np.random.normal(1.5, 0.2, nwalkers)
+d2g_coeff_0 = np.random.normal(0.02, 0.005, nwalkers)
+d2g_exp_0 = -np.abs(np.random.normal(-1.3, 0.3,  nwalkers))
 
 # Input matrix of priors
-p0 = np.vstack((sigma_coeff_0, others_0, d2g_coeff_0, d2g_exp_0)).T
+p0 = np.vstack((sigma_coeff_0,
+                sigma_exp_0,
+                size_exp_0,
+                a_max_0,
+                a_max_exp_0,
+                d2g_coeff_0,
+                d2g_exp_0)
+               ).T
 
 # hpt save file
 filename = 'chain.hdf5'
@@ -193,13 +204,13 @@ backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
 procs = 8  # 30
-steps = 1000  # 30
+steps = 30  # 1000
 
-# if procs > 1:
-#     # Parallelize the simulation
-#     with Pool(processes=procs) as pool:
-#         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
-#         res = sampler.run_mcmc(p0, steps, progress=True, store=True)
-# else:
-#     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
-#     res = sampler.run_mcmc(p0, steps, progress=True, store=True)
+if procs > 1:
+    # Parallelize the simulation
+    with Pool(processes=procs) as pool:
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], pool=pool, backend=backend)
+        res = sampler.run_mcmc(p0, steps, progress=True, store=True)
+else:
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_prob, args=[options, False], backend=backend)
+    res = sampler.run_mcmc(p0, steps, progress=True, store=True)
