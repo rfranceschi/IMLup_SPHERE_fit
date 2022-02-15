@@ -1,3 +1,4 @@
+import sys
 import getpass
 import logging
 import pickle
@@ -166,7 +167,7 @@ options = {'disk': disk, 'PA': disk_params['PA'], 'inc': disk_params['inc'], 'di
            'z0': disk_params['z0'], 'psi': disk_params['psi'], 'alpha': disk_params['alpha'], 'lam_sca': lam_sca,
            'fname_sca_obs': fname_sca_obs, 'beam_sca': beam_sca, 'RMS_sca': RMS_sca,
            'profiles_sca_obs': profiles_sca_obs, 'fname_opac': fname_opac_chopped, 'nr': disklab_grid['nr'],
-           'rin': disklab_grid['rin'], 'r_c': disk_params['r_c'], 'rout': disklab_grid['rout']}
+           'rin': disklab_grid['rin'], 'r_c': disk_params['r_c'], 'rout': disklab_grid['rout'], 'radmc3d_exec': radmc3d_exec}
 
 pickle.dump(options, open("options.pickle", "wb"))
 

@@ -84,7 +84,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     # else:
     #     logP = - np.log(grain_size) - np.log(disk_mass) - np.log(d2g)
 
-    radmc3d_exec = Path('~/bin/radmc3d').expanduser()
+    radmc3d_exec = options['radmc3d_exec']
 
     # temp_directory = tempfile.TemporaryDirectory(dir='.')
     # temp_path = temp_directory.name
