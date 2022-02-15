@@ -2,7 +2,6 @@ import getpass
 import logging
 import pickle
 import shutil
-import sys
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -127,7 +126,7 @@ porosity = 0.3
 lam_opac = np.logspace(-5, 1, n_lam)
 # we insert the scattered light wavelength to be sure we don't need interpolation
 ilam = np.abs(lam_opac - lam_mm).argmin()
-lam_opac[ilam] = lam_sca
+lam_opac[ilam] = lam_mm
 ilam = np.abs(lam_opac - lam_sca).argmin()
 lam_opac[ilam] = lam_sca
 
@@ -180,12 +179,12 @@ ndim = 7
 
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
 sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
-sigma_exp_0 =  np.random.normal(1,  0.3, nwalkers)
+sigma_exp_0 = np.random.normal(1, 0.3, nwalkers)
 size_exp_0 = np.abs(np.random.normal(0.3, 0.1, nwalkers))
 a_max_0 = np.random.normal(0.02, 0.002, nwalkers)
 a_max_exp_0 = np.random.normal(1.5, 0.2, nwalkers)
 d2g_coeff_0 = np.random.normal(0.02, 0.005, nwalkers)
-d2g_exp_0 = -np.abs(np.random.normal(-1.3, 0.3,  nwalkers))
+d2g_exp_0 = -np.abs(np.random.normal(-1.3, 0.3, nwalkers))
 
 # Input matrix of priors
 p0 = np.vstack((sigma_coeff_0,
