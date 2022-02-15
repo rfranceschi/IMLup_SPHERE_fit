@@ -117,8 +117,8 @@ def read_radmc_opacityfile(file):
         # read angles and zscat
         if scatter:
             theta = np.fromfile(f, dtype=np.float64, count=n_th, sep=' ')
-            zscat = np.fromfile(f, dtype=np.float64, count=n_th * n_f * 6, sep=' ').reshape([n_th, n_f, 6])
-            zscat = np.moveaxis(zscat, 0, 1)
+            zscat = np.fromfile(f, dtype=np.float64, count=n_th * n_f * 6, sep=' ').reshape([6, n_th, n_f], order='F').T
+            # zscat = np.moveaxis(zscat, 0, 1)
 
     data = data.reshape(n_f, ncol)
     lam = 1e-4 * data[:, 0]
