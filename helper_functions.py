@@ -1,19 +1,25 @@
 import warnings
 import pickle
 from pathlib import Path
+import tempfile
+import subprocess
 
-import astropy.constants as c
-import disklab
-import dsharp_opac as opacity
 import matplotlib.pyplot as plt
 from matplotlib import lines, text
 from matplotlib.colors import Normalize
-
 import numpy as np
+import tqdm
+
+import astropy.constants as c
 from astropy import units as u
+from gofish import imagecube
+
+import dsharp_opac as opacity
 from dipsy import get_powerlaw_dust_distribution
 from dipsy.utils import get_interfaces_from_log_cell_centers
-from gofish import imagecube
+from disklab.radmc3d import write_wavelength_micron
+import disklab
+
 
 au = c.au.cgs.value
 M_sun = c.M_sun.cgs.value
@@ -341,7 +347,7 @@ def azimuthal_profile(cube, n_theta=30, **kwargs):
         np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
 
 
-def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101):
+def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101, optool=True):
     """make optical constants file"""
 
     if n_theta // 2 == n_theta / 2:
@@ -361,41 +367,75 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
         if porosity > 0.0:
             fname = fname + f'_p{100 * porosity:.0f}'
 
-        constants = opacity.get_dsharp_mix(porosity=porosity)
+        if not optool:
+            constants = opacity.get_dsharp_mix(porosity=porosity)
     else:
         if porosity is not None:
             raise ValueError('if constants are given, porosity keyword cannot be used')
 
     opac_fname = Path(fname).with_suffix('.npz')
 
-    diel_const, rho_s = constants
+    if optool:
+        try:
+            rho_s = optool_wrapper([a[0]], lam, chop=5, porosity=porosity)['rho_s']
+            optool_available = True
+        except FileNotFoundError:
+            warnings.warn('optool unavailable, cannot check rho_s to be consistent or recalculate opacities this way')
+            optool_available = False
+            rho_s = None
+    else:
+        diel_const, rho_s = constants
 
     run_opac = True
 
     if opac_fname.is_file():
 
         opac_dict = read_opacs(opac_fname)
+        # if all the grids agree ...
+        run_opac = False
+        if len(opac_dict['a']) != n_a:
+            print('n_a does not match')
+            run_opac = True
+        if not np.allclose(opac_dict['a'], a):
+            print('a grid not identical')
+            run_opac = True
+        if len(opac_dict['lam']) != n_lam:
+            print('n_lam not identical')
+            run_opac = True
+        if not np.allclose(opac_dict['lam'], lam):
+            print('lambda grid not identical')
+            run_opac = True
+        if len(opac_dict['theta']) != n_theta:
+            print(f'n_theta in dict ({len(opac_dict["theta"])}) != {n_theta}')
+            run_opac = True
 
-        if (
-                (len(opac_dict['a']) == n_a) and
-                np.allclose(opac_dict['a'], a) and
-                (len(opac_dict['lam']) == n_lam) and
-                np.allclose(opac_dict['lam'], lam) and
-                (len(opac_dict['theta']) == n_theta) and
-                (opac_dict['rho_s'] == rho_s)
-        ):
-            print(f'reading from file {opac_fname}')
-            run_opac = False
+        # if optool is used and available or we use dsharp: then we compare densities
+        if (not optool or (optool and optool_available)) and (opac_dict['rho_s'] != rho_s):
+            run_opac = True
 
-    if run_opac:
-        # call the Mie calculation & store the opacity in a npz file
-        opac_dict = opacity.get_smooth_opacities(
-            a,
-            lam,
-            rho_s=rho_s,
-            diel_const=diel_const,
-            extrapolate_large_grains=False,
-            n_angle=(n_theta + 1) // 2)
+        # if we need to run it and optool is used but unavailable: ERROR
+        if run_opac and optool and not optool_available:
+            raise FileNotFoundError('optool unavailable')
+
+    if not run_opac:
+        # ... then we don't calculate opacities!
+        print(f'using opacities from file {opac_fname}')
+    else:
+        if optool:
+            if optool_available:
+                print('using optool: ')
+                opac_dict = optool_wrapper(a, lam, n_angle=n_theta - 1)
+            else:
+                raise FileNotFoundError('optool unavailable, cannot calculate opacities!')
+        else:
+            # call the Mie calculation & store the opacity in a npz file
+            opac_dict = opacity.get_smooth_opacities(
+                a,
+                lam,
+                rho_s=rho_s,
+                diel_const=diel_const,
+                extrapolate_large_grains=False,
+                n_angle=(n_theta + 1) // 2)
 
         print(f'writing opacity to {opac_fname} ... ', end='', flush=True)
         opacity.write_disklab_opacity(opac_fname, opac_dict)
@@ -432,8 +472,6 @@ def chop_forward_scattering(opac_dict, chopforward=5):
     """
 
     k_sca = opac_dict['k_sca']
-    S1 = opac_dict['S1']
-    S2 = opac_dict['S2']
     theta = opac_dict['theta']
     g = opac_dict['g']
     rho_s = opac_dict['rho_s']
@@ -444,7 +482,13 @@ def chop_forward_scattering(opac_dict, chopforward=5):
     n_a = len(a)
     n_lam = len(lam)
 
-    zscat = opacity.calculate_mueller_matrix(lam, m, S1, S2)['zscat']
+    if 'zscat' in opac_dict:
+        zscat = opac_dict['zscat']
+    else:
+        S1 = opac_dict['S1']
+        S2 = opac_dict['S2']
+        zscat = opacity.calculate_mueller_matrix(lam, m, S1, S2)['zscat']
+
     zscat_nochop = zscat.copy()
 
     mu = np.cos(theta * np.pi / 180.)
@@ -633,3 +677,247 @@ def plot_blob(blob: str, norm_mm_sim, norm_mm_obs, norm_sca_sim, norm_sca_obs, f
                origin='lower')
 
     show_profiles(options, **out_dict)
+
+
+def get_line(filehandle, comments=('=', '#')):
+    "helper function: reads next line from file but skips comments and empty lines"
+    line = filehandle.readline()
+    while line.startswith(comments) or line.strip() == '':
+        line = filehandle.readline()
+    return line
+
+
+def read_radmc3d_opacities(path, scattermatrix=True):
+    # reading from RADMC3D input files to get the names of the species and number of wavelength
+    lines = open(path / 'dustopac.inp', 'r')
+    _ = int(get_line(lines).split()[0])
+    n_a = int(get_line(lines).split()[0])
+
+    n_f = int(np.fromfile(path / 'wavelength_micron.inp', count=1, dtype=int, sep=' '))
+
+    names = []
+    for _ in range(n_a):
+        itype = int(get_line(lines).split()[0])
+        if itype not in [1, 10]:
+            print('ERROR!')
+
+        gtype = int(get_line(lines).split()[0])
+        if gtype != 0:
+            print('strange grains detected')
+
+        names += [get_line(lines).split()[0].strip()]
+
+    # check which file format is present
+
+    if scattermatrix and (path / f'dustkapscatmat_{names[0]}.inp').is_file():
+        stem = 'dustkapscatmat_{}.inp'
+        scattermatrix = True
+    else:
+        scattermatrix = False
+        stem = 'dustkappa_{}.inp'
+
+    # now for each name: read the file
+
+    opacs = {}
+    for name in names:
+        file = path / stem.format(name)
+
+        # store in dict
+        opacs[name] = read_radmc_opacityfile(file)
+
+    # the order should be according to particle size, so we reformat the dict to an array
+    k_abs = np.zeros([len(names), n_f])
+    k_sca = np.zeros_like(k_abs)
+    g = np.zeros_like(k_abs)
+    zscat = None
+
+    for i, name in enumerate(names):
+        k_abs[i, :] = opacs[name]['k_abs']
+        k_sca[i, :] = opacs[name]['k_sca']
+        g[i, :] = opacs[name]['g']
+
+        # put data of this species into the big arrays
+        lam = opacs[name]['lam']
+
+        if scattermatrix:
+            if zscat is None:
+                theta = opacs[name]['theta']
+                zscat = np.zeros([len(names), len(lam), len(theta), 6])
+            zscat[i, ...] = opacs[name]['zscat']
+
+    output = {
+        'k_abs': k_abs,
+        'k_sca': k_sca,
+        'g': g,
+        'lam': lam,
+    }
+
+    if scattermatrix:
+        output['zscat'] = zscat
+        output['theta'] = theta
+        output['n_th'] = len(theta)
+
+    return output
+
+
+def read_radmc_opacityfile(file):
+    """reads RADMC-3D opacity files, returns dictionary with its contents."""
+    file = Path(file)
+
+    if 'dustkapscatmat' in file.name:
+        scatter = True
+
+    name = '_'.join(file.stem.split('_')[1:])
+
+    if not file.is_file():
+        raise FileNotFoundError(f'file not found: {file}')
+
+    with open(file, 'r') as f:
+        iformat = int(get_line(f))
+        if iformat == 2:
+            ncol = 3
+        elif iformat in [1, 3]:
+            ncol = 4
+        else:
+            raise ValueError('Format of opacity file unknown')
+        n_f = int(get_line(f))
+
+        # read also number of angles for scattering matrix
+        if scatter:
+            n_th = int(get_line(f))
+
+        # read wavelength, k_abs, k_sca, g
+        data = np.fromfile(f, dtype=np.float64, count=n_f * ncol, sep=' ')
+
+        # read angles and zscat
+        if scatter:
+            theta = np.fromfile(f, dtype=np.float64, count=n_th, sep=' ')
+            zscat = np.fromfile(f, dtype=np.float64, count=n_th * n_f * 6, sep=' ').reshape([6, n_th, n_f], order='F').T
+            # zscat = np.moveaxis(zscat, 0, 1)
+
+    data = data.reshape(n_f, ncol)
+    lam = 1e-4 * data[:, 0]
+    k_abs = data[:, 1]
+    k_sca = data[:, 2]
+
+    if iformat in [1, 3]:
+        opac_gsca = 1.0 * data[:, 3]
+
+    # define the output
+
+    output = {
+        'lam': lam,
+        'k_abs': k_abs,
+        'k_sca': k_sca,
+        'name': name,
+    }
+
+    if iformat in [1, 3]:
+        output['g'] = opac_gsca
+        if scatter:
+            output['theta'] = theta
+            output['n_th'] = n_th
+            output['zscat'] = zscat
+
+    return output
+
+
+def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
+    """
+    Wrapper for optool to calculate DSHARP opacities in RADMC-3D format.
+
+    Parameters
+    ----------
+    a : array
+        particle size array
+    lam : array | str
+        either a string pointing to a RADMC-3d wavelength file or 3-elements: min & max & number of wavelengths
+    chop : float, optional
+        below how many degrees to chop forward scattering peak, by default 5
+    porosity : float, optional
+        grain porosity, by default 0.3
+
+    Returns
+    -------
+    dict
+
+    """
+    td = None
+    if isinstance(lam, str):
+        lam_str = lam
+        nlam = int(np.fromfile(lam_str, count=1, dtype=int, sep=' '))
+    elif len(lam) == 3:
+        print('assuming lam specifies minimum wavelength, maximum wavelength, and number of points')
+        nlam = lam[3]
+        lam_str = '%e %e %d' % tuple(lam)
+    elif len(lam) > 3:
+        print('assuming lam to be given wavelength grid')
+        td = tempfile.TemporaryDirectory()
+        write_wavelength_micron(lam_mic=lam * 1e4, path=td.name)
+        nlam = len(lam)
+        lam_str = str(Path(td.name) / 'wavelength_micron.inp')
+    else:
+        raise ValueError('lam needs to be a file or of length 3 (lmin, lmax, nl)')
+
+    # initialize arrays
+
+    k_abs = np.zeros([len(a), nlam])
+    k_sca = np.zeros_like(k_abs)
+    g = np.zeros_like(k_abs)
+    zscat = None
+
+    # start reading
+
+    for ia, _a in tqdm.tqdm(enumerate(a), total=len(a)):
+        cmd = f'optool -mie -chop {chop} -s {n_angle} -p {porosity} -c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966 -a {_a * 0.9e4} {_a * 1.1e4} 3.5 10 -l {lam_str} -radmc'
+        result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+        output = result.stdout.decode()
+
+        if output.split()[-1] == 'dustkapscatmat.inp':
+            scatter = True
+            fname = 'dustkapscatmat.inp'
+        elif output.split()[-1] == 'dustkappa.inp':
+            scatter = False
+            fname = 'dustkappa.inp'
+        else:
+            raise ValueError(output.split()[-1])
+
+        # read data, remove file
+        optool_data = read_radmc_opacityfile(fname)
+        Path(fname).unlink()
+
+        # put data of this particle into the big arrays
+        k_abs[ia, :] = optool_data['k_abs']
+        k_sca[ia, :] = optool_data['k_sca']
+        g[ia, :] = optool_data['g']
+        lam = optool_data['lam']
+
+        if scatter:
+            theta = optool_data['theta']
+            if zscat is None:
+                zscat = np.zeros([len(a), len(lam), len(theta), 6])
+            zscat[ia, ...] = optool_data['zscat']
+
+    lines = [line for line in output.split('\n') if line.strip().startswith('core')]
+    fractions = np.array([[float(f) for f in line.split()[1:3]] for line in lines])
+    rho_s = fractions.prod(axis=1).sum() * 0.7
+
+    if td is not None:
+        td.cleanup()
+
+    output = {
+        'a': a,
+        'lam': lam,
+        'k_abs': k_abs,
+        'k_sca': k_sca,
+        'g': g,
+        'output': output,
+        'rho_s': rho_s,
+    }
+
+    if scatter:
+        output['zscat'] = zscat
+        output['theta'] = theta
+        output['n_th'] = len(theta)
+
+    return output
