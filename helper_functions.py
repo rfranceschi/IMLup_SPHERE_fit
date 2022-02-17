@@ -1,11 +1,16 @@
 import warnings
+import pickle
 from pathlib import Path
 
 import astropy.constants as c
 import disklab
 import dsharp_opac as opacity
 import matplotlib.pyplot as plt
+from matplotlib import lines, text
+from matplotlib.colors import Normalize
+
 import numpy as np
+from astropy import units as u
 from dipsy import get_powerlaw_dust_distribution
 from dipsy.utils import get_interfaces_from_log_cell_centers
 from gofish import imagecube
@@ -526,3 +531,105 @@ def write_radmc3d(disk2d, lam, path, show_plots=False, nphot=10000000):
             'mc_scat_maxtauabs': '5.d0',
         },
         path=path)
+
+
+def show_image(img_sim, img_obs, norm_sim, norm_obs, **kwargs):
+    f, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+    norm = Normalize(norm_sim[0], norm_sim[1])
+    ax[0].imshow(img_sim, norm=norm, **kwargs)
+    norm = Normalize(norm_obs[0], norm_obs[1])
+    im1 = ax[1].imshow(img_obs, norm=norm, **kwargs)
+    ax[0].set_xlim([2, -2])
+    ax[0].set_ylim([-2, 2])
+
+    # ax[0].axis('off')
+    # ax[1].axis('off')
+    f.subplots_adjust(wspace=0)
+
+    line = lines.Line2D([0.75, 1.75], [-1.75, -1.75], lw=2, color='white', axes=ax[0])
+    ax[0].add_line(line)
+    line = lines.Line2D([0.75, 1.75], [-1.75, -1.75], lw=2, color='white', axes=ax[1])
+    ax[1].add_line(line)
+
+    t = text.Text(1.55, -1.7, '1 arcsec', ha='left', va='bottom', color='white', axes=ax[0])
+    ax[0].add_artist(t)
+    t = text.Text(1.55, -1.7, '1 arcsec', ha='left', va='bottom', color='white', axes=ax[1])
+    ax[1].add_artist(t)
+
+    if np.allclose(norm_sim, norm_obs):
+        pos = ax[1].get_position()
+        cax = f.add_axes([pos.x1, pos.y0, pos.height / 20, pos.height])
+        plt.colorbar(im1, cax=cax)
+
+    plt.show()
+
+
+def show_profiles(opt: dict, **out_dict):
+    profiles_sim = out_dict['profiles_sca_sim']
+    profiles_obs = out_dict['profiles_sca_obs']
+
+    f, ax = plt.subplots(1, 2, figsize=(10, 5))
+
+    x_beam_as = np.sqrt(out_dict['iq_mm_obs'].beamarea_arcsec * 4 * np.log(2) / np.pi)
+    rms = opt['RMS_jyb'] / (out_dict['iq_mm_obs'].beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
+    rms_weighted = rms / np.sqrt(out_dict['x_mm_sim'] / (2 * np.pi * x_beam_as))
+
+    ax[0].semilogy(opt['x_mm_obs'], opt['y_mm_obs'], 'x-')
+    ax[0].semilogy(out_dict['x_mm_sim'], rms_weighted, '--')
+    ax[0].semilogy(out_dict['x_mm_sim'], out_dict['y_mm_sim'], c='red')
+    ax[0].fill_between(opt['x_mm_obs'], opt['y_mm_obs'] - opt['dy_mm_obs'], opt['y_mm_obs'] + opt['dy_mm_obs'])
+    ax[0].set_title('Continuum 1.25 mm emission')
+    ax[1].set_title('Scattered 1.65 $\mu$m emission')
+
+    for i, key in enumerate(profiles_sim.keys()):
+        profile = profiles_sim[key]
+        x = profile['x']
+        y = profile['y']
+        dy = profile['dy']
+
+        ax[1].semilogy(x, y, c=f'C{i}')
+        ax[1].fill_between(x, y - dy, y + dy, fc=f'C{i}', alpha=0.5)
+
+    # norm = profiles_obs['B']['norm']
+    for i, key in enumerate(profiles_obs.keys()):
+        profile = profiles_obs[key]
+        x = profile['x']
+        y = profile['y']
+        dy = profile['dy']
+        # mask = profile['mask']
+
+        ax[1].semilogy(x, y, f'C{i}--')
+        ax[1].fill_between(x, y - dy, y + dy, fc=f'C{i}', alpha=0.5)
+
+    ax[0].set_xlim([1, 2.5])
+    ax[1].set_xlim([1, 2.5])
+    ax[1].set_ylim([1e-2, 1e1])
+
+    plt.show()
+
+
+def plot_blob(blob: str, norm_mm_sim, norm_mm_obs, norm_sca_sim, norm_sca_obs, folder: str = None):
+    if folder is None:
+        fpath = Path(f'pars_test/run_{blob}.pickle')
+    else:
+        fpath = Path(f'{folder}/run_{blob}.pickle')
+
+    with open(fpath, 'rb') as fff:
+        out_dict = pickle.load(fff)
+
+    with open('options.pickle', 'rb') as fff:
+        options = pickle.load(fff)
+
+    im_cgs_sim = out_dict['iq_mm_sim'].data * out_dict['iq_mm_sim'].pix_per_beam / out_dict[
+        'iq_mm_sim'].beamarea_str * 1e-23
+    im_cgs_obs = out_dict['iq_mm_obs'].data / out_dict['iq_mm_sim'].beamarea_str * 1e-23
+
+    iq_sca_sim = out_dict['iq_sca_sim']
+    iq_sca_obs = out_dict['iq_sca_obs']
+
+    show_image(im_cgs_sim, im_cgs_obs, norm_sim=norm_mm_sim, norm_obs=norm_mm_obs, extent=out_dict['iq_mm_sim'].extent,
+               origin='lower')
+    show_image(iq_sca_sim.data, iq_sca_obs.data, norm_sim=norm_sca_sim, norm_obs=norm_sca_obs, extent=iq_sca_obs.extent,
+               origin='lower')
+
+    show_profiles(options, **out_dict)
