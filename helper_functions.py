@@ -900,7 +900,7 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
 
     lines = [line for line in output.split('\n') if line.strip().startswith('core')]
     fractions = np.array([[float(f) for f in line.split()[1:3]] for line in lines])
-    rho_s = fractions.prod(axis=1).sum() * 0.7
+    rho_s = fractions.prod(axis=1).sum() * (1.0 - porosity)
 
     if td is not None:
         td.cleanup()
