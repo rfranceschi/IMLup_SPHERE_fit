@@ -357,7 +357,7 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
     n_a = len(a)
     n_lam = len(lam)
 
-    if composition.lower() != 'dsharp' & optool is False:
+    if (composition.lower() != 'dsharp') and (optool is False):
         raise ValueError('non dsharp opacities should use optool')
 
     if constants is None:
