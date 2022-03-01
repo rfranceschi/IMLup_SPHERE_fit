@@ -412,7 +412,7 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
             print(f'n_theta in dict ({len(opac_dict["theta"])}) != {n_theta}')
             run_opac = True
 
-        if 'composition' in opac_dict & opac_dict['composition'] != composition:
+        if ('composition' in opac_dict) and (opac_dict['composition'] != composition):
             print(f'composition in dict ({opac_dict["composition"]}) != {composition}')
             run_opac = True
 
