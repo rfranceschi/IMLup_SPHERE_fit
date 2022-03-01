@@ -875,7 +875,7 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180, composition='dshar
         composition = 'dsharp'
 
     if composition.lower() == 'dsharp':
-        composition = '-c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966'
+        composition = '-mie -c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966'
     elif composition.lower() == 'diana':
         composition = ''
 
@@ -889,7 +889,7 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180, composition='dshar
     # start reading
 
     for ia, _a in tqdm.tqdm(enumerate(a), total=len(a)):
-        cmd = f'optool -mie -chop {chop} -s {n_angle} -p {porosity} {composition} -a {_a * 0.9e4} {_a * 1.1e4} 3.5 10 -l {lam_str} -radmc'
+        cmd = f'optool -chop {chop} -s {n_angle} -p {porosity} {composition} -a {_a * 0.9e4} {_a * 1.1e4} 3.5 10 -l {lam_str} -radmc'
         result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
         output = result.stdout.decode()
 
