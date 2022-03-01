@@ -874,9 +874,9 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180, composition='dshar
     if composition is None:
         composition = 'dsharp'
 
-    if composition.lower == 'dsharp':
+    if composition.lower() == 'dsharp':
         composition = '-c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966'
-    elif composition.lower == 'diana':
+    elif composition.lower() == 'diana':
         composition = ''
 
     # initialize arrays
