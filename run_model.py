@@ -132,9 +132,10 @@ ilam = np.abs(lam_opac - lam_sca).argmin()
 lam_opac[ilam] = lam_sca
 
 a_opac = np.logspace(-5, 1, n_a)
+composition = 'dsharp'
 
 # make opacities if necessary
-opac_dict = make_opacs(a_opac, lam_opac, fname='opacities/dustkappa_IMLUP', porosity=porosity, n_theta=n_theta)
+opac_dict = make_opacs(a_opac, lam_opac, fname='opacities/dustkappa_IMLUP', porosity=porosity, n_theta=n_theta, composition=composition)
 fname_opac = opac_dict['filename']
 
 # This part chops the very-forward scattering part of the phase function.
@@ -152,6 +153,7 @@ zscat, zscat_nochop, k_sca, g = chop_forward_scattering(opac_dict)
 opac_dict['k_sca'] = k_sca
 opac_dict['zscat'] = zscat
 opac_dict['g'] = g
+opac_dict['composition'] = composition
 
 rho_s = opac_dict['rho_s']
 m = 4 * np.pi / 3 * rho_s * a_opac ** 3
@@ -166,11 +168,12 @@ options = {'disk': disk, 'PA': disk_params['PA'], 'inc': disk_params['inc'], 'di
            'x_mm_obs': x_mm_obs, 'y_mm_obs': y_mm_obs, 'dy_mm_obs': dy_mm_obs, 'fname_mm_obs': fname_mm_obs,
            'z0': disk_params['z0'], 'psi': disk_params['psi'], 'alpha': disk_params['alpha'], 'lam_sca': lam_sca,
            'fname_sca_obs': fname_sca_obs, 'beam_sca': beam_sca, 'RMS_sca': RMS_sca,
-           'profiles_sca_obs': profiles_sca_obs, 'fname_opac': fname_opac_chopped, 'nr': disklab_grid['nr'],
+           'profiles_sca_obs': profiles_sca_obs, 'fname_opac': fname_opac_chopped, 'composition': composition, 'nr': disklab_grid['nr'],
            'rin': disklab_grid['rin'], 'r_c': disk_params['r_c'], 'rout': disklab_grid['rout'], 'radmc3d_exec': radmc3d_exec}
 
 pickle.dump(options, open("options.pickle", "wb"))
 
+sys.exit(0)
 # Emcee
 # Here we define some inputs and initial parameter sets for the optimization
 

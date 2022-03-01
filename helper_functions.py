@@ -347,7 +347,7 @@ def azimuthal_profile(cube, n_theta=30, **kwargs):
         np.array([np.std(dvals_annulus[tidx == t]) for t in range(1, n_theta + 1)])
 
 
-def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101, optool=True):
+def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n_theta=101, optool=True, composition='dsharp'):
     """make optical constants file"""
 
     if n_theta // 2 == n_theta / 2:
@@ -356,6 +356,9 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
 
     n_a = len(a)
     n_lam = len(lam)
+
+    if composition.lower() != 'dsharp' & optool is False:
+        raise ValueError('non dsharp opacities should use optool')
 
     if constants is None:
         if porosity is None:
@@ -377,7 +380,7 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
 
     if optool:
         try:
-            rho_s = optool_wrapper([a[0]], lam, chop=5, porosity=porosity)['rho_s']
+            rho_s = optool_wrapper([a[0]], lam, chop=5, porosity=porosity, composition=composition)['rho_s']
             optool_available = True
         except FileNotFoundError:
             warnings.warn('optool unavailable, cannot check rho_s to be consistent or recalculate opacities this way')
@@ -409,6 +412,10 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
             print(f'n_theta in dict ({len(opac_dict["theta"])}) != {n_theta}')
             run_opac = True
 
+        if 'composition' in opac_dict & opac_dict['composition'] != composition:
+            print(f'composition in dict ({opac_dict["composition"]}) != {composition}')
+            run_opac = True
+
         # if optool is used and available or we use dsharp: then we compare densities
         if (not optool or (optool and optool_available)) and (opac_dict['rho_s'] != rho_s):
             run_opac = True
@@ -424,7 +431,7 @@ def make_opacs(a, lam, fname='dustkappa_IMLUP', porosity=None, constants=None, n
         if optool:
             if optool_available:
                 print('using optool: ')
-                opac_dict = optool_wrapper(a, lam, n_angle=n_theta - 1)
+                opac_dict = optool_wrapper(a, lam, n_angle=n_theta - 1, composition=composition)
             else:
                 raise FileNotFoundError('optool unavailable, cannot calculate opacities!')
         else:
@@ -822,7 +829,7 @@ def read_radmc_opacityfile(file):
     return output
 
 
-def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
+def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180, composition='dsharp'):
     """
     Wrapper for optool to calculate DSHARP opacities in RADMC-3D format.
 
@@ -836,6 +843,11 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
         below how many degrees to chop forward scattering peak, by default 5
     porosity : float, optional
         grain porosity, by default 0.3
+
+    composition : str
+        if 'dsharp': use opacities similar to DSHARP (not identical, need to check why)
+        if 'diana': use DIANA opacities
+        else: use whatever is given as parameters for optool
 
     Returns
     -------
@@ -859,6 +871,14 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
     else:
         raise ValueError('lam needs to be a file or of length 3 (lmin, lmax, nl)')
 
+    if composition is None:
+        composition = 'dsharp'
+
+    if composition.lower == 'dsharp':
+        composition = '-c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966'
+    elif composition.lower == 'diana':
+        composition = ''
+
     # initialize arrays
 
     k_abs = np.zeros([len(a), nlam])
@@ -869,7 +889,7 @@ def optool_wrapper(a, lam, chop=5, porosity=0.3, n_angle=180):
     # start reading
 
     for ia, _a in tqdm.tqdm(enumerate(a), total=len(a)):
-        cmd = f'optool -mie -chop {chop} -s {n_angle} -p {porosity} -c h2o-w 0.2 -c astrosil 0.3291 -c fes 0.0743 -c c-org 0.3966 -a {_a * 0.9e4} {_a * 1.1e4} 3.5 10 -l {lam_str} -radmc'
+        cmd = f'optool -mie -chop {chop} -s {n_angle} -p {porosity} {composition} -a {_a * 0.9e4} {_a * 1.1e4} 3.5 10 -l {lam_str} -radmc'
         result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
         output = result.stdout.decode()
 
