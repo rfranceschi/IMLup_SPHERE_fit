@@ -350,7 +350,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
                                                    profile_obs['y'][i_obs_0:max_len],
                                                    np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
     # Jeffreys’ prior
-    logp = -np.log(chi_squared) + np.log(parameters[0] * parameters[3] * parameters[5])
+    logp = -(0.5 * chi_squared) + np.log(parameters[0] * parameters[3] * parameters[5])
 
     # we keep some results stored in a dictionary
 
