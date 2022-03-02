@@ -50,13 +50,11 @@ def calculate_chisquared(sim_data, obs_data, error):
 
 def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
-        "sigma_coeff": parameters[0],
-        "sigma_exp": parameters[1],
-        "size_exp": parameters[2],
-        "amax_coeff": parameters[3],
-        "amax_exp": parameters[4],
-        "d2g_coeff": parameters[5],
-        "d2g_exp": parameters[6],
+        "size_exp": parameters[0],
+        "amax_coeff": parameters[1],
+        "amax_exp": parameters[2],
+        "d2g_coeff": parameters[3],
+        "d2g_exp": parameters[4],
     }
 
     temp_number = random.getrandbits(32)
@@ -71,13 +69,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     output = Capturing()
 
-    if not ((0 < params['sigma_coeff'] < 1e2) and
-            (-5 < params['sigma_exp'] < 5) and
+    if not (
             (-5 < params['size_exp'] < 5) and
             (1e-5 < params['amax_coeff'] < 1e5) and
             (-5 < params['amax_exp'] < 5) and
             (1e-6 < params['d2g_coeff'] < 1e2) and
-            (-5 < params['d2g_exp'] < 5)):
+            (-3 < params['d2g_exp'] < 3)):
         print("Parameters out of prior")
         return -np.Inf, -1
 
@@ -350,7 +347,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
                                                    profile_obs['y'][i_obs_0:max_len],
                                                    np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
     # Jeffreys’ prior
-    logp = -(0.5 * chi_squared) + np.log(parameters[0] * parameters[3] * parameters[5])
+    logp = -chi_squared + np.log(parameters[1] * parameters[3])
 
     # we keep some results stored in a dictionary
 
@@ -408,16 +405,9 @@ def main():
         options = pickle.load(fb)
 
     a_max_300 = options['lam_mm'] / (2 * np.pi)
-    options['nr'] = 150
-    print(f"rc: {options['r_c'] / au}")
-    options['rin'] = 0.2 * au
-    options['fname_opac'] = Path('opacities_mine/dustkappa_IMLUP_p30_chopped.npz')
-    print(options['fname_opac'])
 
     # original
-    p0 = [28.4,  # sigma_coeff
-          1,  # sigma_exp
-          0.6625,  # size_exp  a**(4 - size_exp) grain size distribution
+    p0 = [0.6625,  # size_exp  a**(4 - size_exp) grain size distribution
           a_max_300,  # amax_coeff
           0.1,  # amax_exp
           0.01,  # d2g_coeff
@@ -439,7 +429,7 @@ def main():
     #     params[i_param] = _param
     #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test_old_opac')
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:

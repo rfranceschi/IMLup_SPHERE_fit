@@ -179,11 +179,11 @@ sys.exit(0)
 
 # defining number of walkers
 nwalkers = 30  # it  does not work with fewer  walkers than the number  of dimensions
-ndim = 7
+ndim = 5
 
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
-sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
-sigma_exp_0 = np.random.normal(1, 0.3, nwalkers)
+# sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
+# sigma_exp_0 = np.random.normal(1, 0.3, nwalkers)
 size_exp_0 = np.abs(np.random.normal(0.3, 0.1, nwalkers))
 a_max_0 = np.random.normal(0.02, 0.002, nwalkers)
 a_max_exp_0 = np.random.normal(1.5, 0.2, nwalkers)
@@ -191,9 +191,7 @@ d2g_coeff_0 = np.random.normal(0.02, 0.005, nwalkers)
 d2g_exp_0 = -np.abs(np.random.normal(-1.3, 0.3, nwalkers))
 
 # Input matrix of priors
-p0 = np.vstack((sigma_coeff_0,
-                sigma_exp_0,
-                size_exp_0,
+p0 = np.vstack((size_exp_0,
                 a_max_0,
                 a_max_exp_0,
                 d2g_coeff_0,

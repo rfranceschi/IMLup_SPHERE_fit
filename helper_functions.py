@@ -48,13 +48,15 @@ def make_disklab2d_model(
 ):
     # The different indices in the parameters list correspond to different physical paramters
 
-    sigma_coeff = parameters[0]
-    sigma_exp = parameters[1]
-    size_exp = parameters[2]
-    amax_coeff = parameters[3]
-    amax_exp = parameters[4]
-    d2g_coeff = parameters[5]
-    d2g_exp = parameters[6]
+    size_exp = parameters[0]
+    amax_coeff = parameters[1]
+    amax_exp = parameters[2]
+    d2g_coeff = parameters[3]
+    d2g_exp = parameters[4]
+
+    # hard-coded gas parameters
+    sigma_coeff = 28.4
+    sigma_exp = 1.0
 
     # read some values from the parameters file
 
