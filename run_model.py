@@ -40,7 +40,7 @@ disk = 'IMLup'
 # disklab grid
 disklab_grid = {
     "nr": 100,
-    "rin": 0.1 * au,
+    "rin": 0.2 * au,
     "rout": 400 * au,  # 400au from avenhaus paper  #DSHARP Huang 2018 says 290 au
 }
 
@@ -132,7 +132,7 @@ ilam = np.abs(lam_opac - lam_sca).argmin()
 lam_opac[ilam] = lam_sca
 
 a_opac = np.logspace(-5, 1, n_a)
-composition = 'dsharp'
+composition = 'diana'
 
 # make opacities if necessary
 opac_dict = make_opacs(a_opac, lam_opac, fname='opacities/dustkappa_IMLUP', porosity=porosity, n_theta=n_theta, composition=composition)

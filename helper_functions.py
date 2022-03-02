@@ -10,6 +10,7 @@ from matplotlib.colors import Normalize
 import numpy as np
 import tqdm
 
+from astropy.modeling.powerlaws import BrokenPowerLaw1D
 import astropy.constants as c
 from astropy import units as u
 from gofish import imagecube
@@ -72,7 +73,9 @@ def make_disklab2d_model(
 
     # add the dust, based on the dust-to-gas parameters
 
-    d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
+    #  experiment d2g distribution
+    # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
+    d2g = BrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au))**(4))
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)

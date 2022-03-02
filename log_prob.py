@@ -147,7 +147,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     fname_mm_sim = temp_path / 'image_mm.fits'
 
     with output:
-        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} setthreads 1"
+        radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} setthreads 4"
         disklab.radmc3d.radmc3d(
             radmc_call_mm,
             path=temp_path,
@@ -228,7 +228,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
             iq_sca_obs.nxpix - 1) * 1.0000000000000286
-        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 1 stokes"
+        radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 4 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
             path=temp_path,
@@ -408,18 +408,38 @@ def main():
         options = pickle.load(fb)
 
     a_max_300 = options['lam_mm'] / (2 * np.pi)
+    options['nr'] = 150
+    print(f"rc: {options['r_c'] / au}")
+    options['rin'] = 0.2 * au
+    options['fname_opac'] = Path('opacities_mine/dustkappa_IMLUP_p30_chopped.npz')
+    print(options['fname_opac'])
 
     # original
     p0 = [28.4,  # sigma_coeff
-          1.0,  # sigma_exp
-          0.1,  # size_exp  a**(4 - size_exp) grain size distribution
+          1,  # sigma_exp
+          0.6625,  # size_exp  a**(4 - size_exp) grain size distribution
           a_max_300,  # amax_coeff
           0.1,  # amax_exp
-          0.0703,  # d2g_coeff
-          -1.7625,  # d2g_exp
+          0.01,  # d2g_coeff
+          0.5,  # d2g_exp
           ]
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test_30')
+    #
+    #  - dust density at 1 au ~ 200 g / cm3
+    #  - get rid of gas parameters and use maps values
+    #  - check what happens to this model if we set the d2g exponent to 0
+    #  - see what the new DIANA opacity change this model
+    #  - try different d2g distributions (constant, brokwen power law...)
+
+    # i_param = 4
+    # param_array = np.linspace(0.1, 1, 4, endpoint=True)
+    #
+    # for _i, _param in enumerate(param_array):
+    #     params = p0
+    #     params[i_param] = _param
+    #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
+
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test_old_opac')
     print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:
