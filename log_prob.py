@@ -407,11 +407,11 @@ def main():
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
     # original
-    p0 = [0.6625,  # size_exp  a**(4 - size_exp) grain size distribution
+    p0 = [0.5,  # size_exp  a**(4 - size_exp) grain size distribution
           a_max_300,  # amax_coeff
           0.1,  # amax_exp
           0.01,  # d2g_coeff
-          0.5,  # d2g_exp
+          0.01,  # d2g_exp
           ]
 
     #
@@ -441,4 +441,7 @@ def main():
 
 
 if __name__ == '__main__':
+    import time
+    start_time = time.time()
     main()
+    print(f"---- execution time {time.time() - start_time} ----")
