@@ -1,3 +1,4 @@
+import os
 import sys
 import getpass
 import logging
@@ -29,11 +30,15 @@ M_sun = c.M_sun.cgs.value
 L_sun = c.L_sun.cgs.value
 R_sun = c.R_sun.cgs.value
 
+output_dir = Path('runs')
+
 # select radmc3d executable path
 if getpass.getuser() == 'birnstiel':
     radmc3d_exec = Path('~/.bin/radmc3d').expanduser()
 else:
     radmc3d_exec = Path('~/bin/radmc3d').expanduser()
+    if os.uname().nodename == 'birnst1':
+        output_dir = Path('~/scratch/runs')
 
 disk = 'IMLup'
 
@@ -168,8 +173,9 @@ options = {'disk': disk, 'PA': disk_params['PA'], 'inc': disk_params['inc'], 'di
            'x_mm_obs': x_mm_obs, 'y_mm_obs': y_mm_obs, 'dy_mm_obs': dy_mm_obs, 'fname_mm_obs': fname_mm_obs,
            'z0': disk_params['z0'], 'psi': disk_params['psi'], 'alpha': disk_params['alpha'], 'lam_sca': lam_sca,
            'fname_sca_obs': fname_sca_obs, 'beam_sca': beam_sca, 'RMS_sca': RMS_sca,
-           'profiles_sca_obs': profiles_sca_obs, 'fname_opac': fname_opac_chopped, 'composition': composition, 'nr': disklab_grid['nr'],
-           'rin': disklab_grid['rin'], 'r_c': disk_params['r_c'], 'rout': disklab_grid['rout'], 'radmc3d_exec': radmc3d_exec}
+           'profiles_sca_obs': profiles_sca_obs, 'fname_opac': fname_opac_chopped, 'composition': composition,
+           'nr': disklab_grid['nr'], 'rin': disklab_grid['rin'], 'r_c': disk_params['r_c'],
+           'rout': disklab_grid['rout'], 'radmc3d_exec': radmc3d_exec, 'output_dir': output_dir}
 
 pickle.dump(options, open("options.pickle", "wb"))
 
@@ -178,7 +184,7 @@ sys.exit(0)
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 30  # it  does not work with fewer  walkers than the number  of dimensions
+nwalkers = 10  # it  does not work with fewer  walkers than the number  of dimensions
 ndim = 5
 
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
@@ -204,8 +210,8 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 # backend.reset(nwalkers, ndim)
 
-procs = 8  # 30
-steps = 30  # 1000
+procs = 10  # 30
+steps = 1000  # 1000
 
 if procs > 1:
     # Parallelize the simulation

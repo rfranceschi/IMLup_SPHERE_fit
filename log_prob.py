@@ -58,7 +58,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     }
 
     temp_number = random.getrandbits(32)
-    output_dir = Path('runs')
+    output_dir = options['output_dir']
     if run_id is None:
         temp_path = output_dir / f'run_{temp_number}'
     else:
@@ -104,10 +104,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     output_dict['disk2d'] = disk2d
 
-    print(f'disk to star mass ratio = {disk2d.disk.mass / disk2d.disk.mstar:.2g}')
-
     # read the wavelength grid from the opacity file and write out radmc setup
-
     opac_dict = read_opacs(options['fname_opac'])
     lam_opac = opac_dict['lam']
     n_a = len(opac_dict['a'])
@@ -136,14 +133,13 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     # read the real disk images
 
-    iq_mm_obs = imagecube(str(options['fname_mm_obs']), FOV=options['clip'])
-    iq_sca_obs = imagecube(str(options['fname_sca_obs']), FOV=options['clip'])
-
-    # calculate the mm continuum image
-
-    fname_mm_sim = temp_path / 'image_mm.fits'
-
     with output:
+        iq_mm_obs = imagecube(str(options['fname_mm_obs']), FOV=options['clip'])
+        iq_sca_obs = imagecube(str(options['fname_sca_obs']), FOV=options['clip'])
+
+        # calculate the mm continuum image
+        fname_mm_sim = temp_path / 'image_mm.fits'
+
         radmc_call_mm = f"image incl {options['inc']} posang {options['PA'] - 90} npix 500 lambda {options['lam_mm'] * 1e4} sizeau {2 * options['rout'] / au} setthreads 4"
         disklab.radmc3d.radmc3d(
             radmc_call_mm,
@@ -173,24 +169,23 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
+    with  output:
+        iq_mm_sim = imagecube(str(fname_mm_sim))
+        iq_mm_sim.bmaj, iq_mm_sim.bmin, iq_mm_sim.bpa = iq_mm_obs.beam
+        iq_mm_sim.beamarea_arcsec = iq_mm_sim._calculate_beam_area_arcsec()
+        iq_mm_sim.beamarea_str = iq_mm_sim._calculate_beam_area_str()
 
-    iq_mm_sim = imagecube(str(fname_mm_sim))
-    iq_mm_sim.bmaj, iq_mm_sim.bmin, iq_mm_sim.bpa = iq_mm_obs.beam
-    iq_mm_sim.beamarea_arcsec = iq_mm_sim._calculate_beam_area_arcsec()
-    iq_mm_sim.beamarea_str = iq_mm_sim._calculate_beam_area_str()
-
-    # derive the radial profile
-
-    x_mm_sim, y_mm_sim, dy_mm_sim = get_profile_from_fits(
-        str(fname_mm_sim),
-        clip=options['clip'],
-        inc=options['inc'],
-        PA=options['PA'],
-        z0=0.0,
-        psi=0.0,
-        beam=iq_mm_obs.beam,
-        show_plots=False,
-        dist=options['distance'])
+        # derive the radial profile
+        x_mm_sim, y_mm_sim, dy_mm_sim = get_profile_from_fits(
+            str(fname_mm_sim),
+            clip=options['clip'],
+            inc=options['inc'],
+            PA=options['PA'],
+            z0=0.0,
+            psi=0.0,
+            beam=iq_mm_obs.beam,
+            show_plots=False,
+            dist=options['distance'])
 
     # clip the profiles if they are not of the same length
 
@@ -301,22 +296,23 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     hdul = fits.HDUList([hdu])
     hdul.writeto(fname_qphi_sim)
 
-    # read as image cube and copy beam properties from observations
-    iq_qphi_sim = imagecube(str(fname_qphi_sim), FOV=options['clip'])
+    with output:
+        # read as image cube and copy beam properties from observations
+        iq_qphi_sim = imagecube(str(fname_qphi_sim), FOV=options['clip'])
 
-    for iq in [iq_sca_obs, iq_qphi_sim]:
-        iq.bmaj, iq.bmin, iq.bpa = options['beam_sca']
-        iq.beamarea_arcsec = iq._calculate_beam_area_arcsec()
-        iq.beamarea_str = iq._calculate_beam_area_str()
+        for iq in [iq_sca_obs, iq_qphi_sim]:
+            iq.bmaj, iq.bmin, iq.bpa = options['beam_sca']
+            iq.beamarea_arcsec = iq._calculate_beam_area_arcsec()
+            iq.beamarea_str = iq._calculate_beam_area_str()
 
-    profiles_sca_sim = get_normalized_profiles(
-        str(fname_qphi_sim),
-        clip=options['clip'],
-        inc=options['inc'],
-        PA=options['PA'],
-        z0=options['z0'],
-        psi=options['psi'],
-        beam=options['beam_sca'])
+        profiles_sca_sim = get_normalized_profiles(
+            str(fname_qphi_sim),
+            clip=options['clip'],
+            inc=options['inc'],
+            PA=options['PA'],
+            z0=options['z0'],
+            psi=options['psi'],
+            beam=options['beam_sca'])
 
     try:
         assert np.allclose(options['profiles_sca_obs']['B']['x'], profiles_sca_sim['B']['x'])
@@ -376,7 +372,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         pickle.dump(output_dict, fn)
 
     if not debugging:
-        shutil.rmtree(temp_path)
+        shutil.rmtree(temp_path, ignore_errors=True)
 
     if np.isnan(logp):
         logging.warning(f"Probability function returned NaN for run ID {temp_number}")
