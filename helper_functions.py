@@ -10,7 +10,7 @@ from matplotlib.colors import Normalize
 import numpy as np
 import tqdm
 
-from astropy.modeling.powerlaws import BrokenPowerLaw1D
+from astropy.modeling.powerlaws import SmoothlyBrokenPowerLaw1D
 import astropy.constants as c
 from astropy import units as u
 from gofish import imagecube
@@ -77,7 +77,7 @@ def make_disklab2d_model(
 
     #  experiment d2g distribution
     # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
-    d2g = BrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au))**10)
+    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au))**5)
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
@@ -137,12 +137,25 @@ def make_disklab2d_model(
         ax.set_ylabel(r'T$_{mid}$')
 
     # iterate the temperature
-    for iter in range(100):
+    f, ax = plt.subplots(dpi=80)
+    for iter in range(1000):
+        # tmid_previous = d.tmid
         d.compute_hsurf()
         d.compute_flareindex()
         d.compute_flareangle_from_flareindex(inclrstar=True)
         d.compute_disktmid(keeptvisc=False)
+
+        # d.tmid = tmid_previous + 0.2 * (d.tmid - tmid_previous)
+
         d.compute_cs_and_hp()
+        if (iter % 100) == 0:
+            ax.plot(d.r / au, d.hs / au, label=iter)
+    ax.set_xlim(80, 400)
+    # ax.set_ylim(0, 100)
+    ax.set_xscale('log')
+    plt.legend()
+    plt.show()
+    plt.savefig('hs')
 
     # ---- Make a 2D model out of it ----
 

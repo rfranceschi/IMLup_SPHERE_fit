@@ -74,7 +74,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             (1e-5 < params['amax_coeff'] < 1e5) and
             (-5 < params['amax_exp'] < 5) and
             (1e-6 < params['d2g_coeff'] < 1e2) and
-            (-3 < params['d2g_exp'] < 3)):
+            (0 < params['d2g_exp'] < 3)):
         print("Parameters out of prior")
         return -np.Inf, -1
 
