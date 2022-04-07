@@ -33,6 +33,11 @@ def movingaverage(interval, window_size):
     return np.convolve(interval, window, 'same')
 
 
+def running_average(a, N=1):
+    b = np.concatenate((np.ones(N) * a[0], a, np.ones(N) * a[-1]))
+    return np.convolve(b, np.ones(2 * N + 1) / (2 * N + 1), mode='valid')
+
+
 def make_disklab2d_model(
         parameters,
         mstar,
@@ -77,7 +82,7 @@ def make_disklab2d_model(
 
     #  experiment d2g distribution
     # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
-    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au))**5)
+    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au)))
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
@@ -136,26 +141,53 @@ def make_disklab2d_model(
         ax.set_xlabel('radius [au]')
         ax.set_ylabel(r'T$_{mid}$')
 
+    d.compute_disktmid(keeptvisc=False)
+    d.compute_hsurf()
+    d.compute_cs_and_hp()
+    d.compute_mean_opacity()
+
     # iterate the temperature
-    f, ax = plt.subplots(dpi=80)
-    for iter in range(1000):
-        # tmid_previous = d.tmid
+    if show_plots:
+        f, ax = plt.subplots(2, 1, dpi=150, sharex=True)
+    n_iter = 100
+    for iter in range(n_iter):
+        tmid_previous = d.tmid
+        hs_previous = d.hs
+
         d.compute_hsurf()
+        d.hs = running_average(d.hs, N=2)
+        d.hs = hs_previous + 0.08 * (d.hs - hs_previous)
+
         d.compute_flareindex()
         d.compute_flareangle_from_flareindex(inclrstar=True)
         d.compute_disktmid(keeptvisc=False)
+        d.tmid = running_average(d.tmid, N=2)
 
-        # d.tmid = tmid_previous + 0.2 * (d.tmid - tmid_previous)
+        d.tmid = tmid_previous + 0.08 * (d.tmid - tmid_previous)
+
+        if all(np.abs(tmid_previous / d.tmid - 1) < 0.01):
+            print(f"iteration to convergence: {iter}")
+            break
+        else:
+            print(f"not converged, max change {max(np.abs(tmid_previous / d.tmid - 1))}")
 
         d.compute_cs_and_hp()
-        if (iter % 100) == 0:
-            ax.plot(d.r / au, d.hs / au, label=iter)
-    ax.set_xlim(80, 400)
-    # ax.set_ylim(0, 100)
-    ax.set_xscale('log')
-    plt.legend()
-    plt.show()
-    plt.savefig('hs')
+        d.compute_mean_opacity()
+
+        if show_plots:
+            if (iter % 9) == 0 and (iter > 50):
+                ax[0].loglog(d.r / au, d.hs / au, label=iter)
+                ax[1].loglog(d.r / au, d.tmid, label=iter)
+
+    if show_plots:
+        ax[-1].set_xlim(left=120)
+        ax[0].set_ylim(1e1, 6e1)
+        ax[1].set_ylim(1e0, 5e1)
+        ax[0].set_title("hs")
+        ax[1].set_title("tmid")
+        plt.suptitle("Midplane iterations")
+        plt.legend()
+        plt.show()
 
     # ---- Make a 2D model out of it ----
 
@@ -182,10 +214,14 @@ def make_disklab2d_model(
     disk2d.radial_raytrace()
 
     n_iter = 10
+    if show_plots:
+        f, ax = plt.subplots(2, 1, dpi=150)
+        plt.suptitle("Vertical iterations")
     for iter in range(n_iter):
         disk2d.radial_raytrace()
-        for vert in disk2d.verts:
+        for i, vert in enumerate(disk2d.verts):
             vert.compute_rhogas_hydrostatic()
+            vert.rhogas = running_average(vert.rhogas, N=2)
             vert.compute_mean_opacity()
             vert.irradiate_with_flaring_index()
 
@@ -196,9 +232,17 @@ def make_disklab2d_model(
             # vert.compute_viscous_heating()
 
             vert.solve_vert_rad_diffusion()
+            vert.tgas = running_average(vert.tgas, N=2)
             vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
+            if show_plots:
+                if i == 80 and iter > 5:
+                    ax[0].loglog(vert.z / au, vert.rhogas, label=iter)
+                    ax[1].loglog(vert.z / au, vert.tgas, label=iter)
             for dust in vert.dust:
                 dust.compute_settling_mixing_equilibrium()
+    if show_plots:
+        plt.legend()
+        plt.show()
 
     # --- done setting up the radmc3d model ---
     return disk2d

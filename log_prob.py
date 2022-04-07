@@ -403,11 +403,11 @@ def main():
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
     # original
-    p0 = [0.5,  # size_exp  a**(4 - size_exp) grain size distribution
-          a_max_300,  # amax_coeff
-          0.1,  # amax_exp
-          0.01,  # d2g_coeff
-          0.01,  # d2g_exp
+    p0 = [0.6266170704991851,  # size_exp  a**(4 - size_exp) grain size distribution
+          0.043481430748301644,  # amax_coeff
+          4.377754651621798,  # amax_exp
+          0.0023342373147083022,  # d2g_coeff
+          1.3824066621806903,  # d2g_exp
           ]
 
     #
