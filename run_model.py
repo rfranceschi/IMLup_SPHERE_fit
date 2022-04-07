@@ -38,7 +38,7 @@ if getpass.getuser() == 'birnstiel':
 else:
     radmc3d_exec = Path('~/bin/radmc3d').expanduser()
     if os.uname().nodename == 'birnst1':
-        output_dir = Path('~/scratch/runs')
+        output_dir = Path('/home/moon/franceschi/scratch/runs')
 
 disk = 'IMLup'
 
