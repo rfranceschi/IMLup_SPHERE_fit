@@ -141,46 +141,60 @@ def make_disklab2d_model(
         ax.set_xlabel('radius [au]')
         ax.set_ylabel(r'T$_{mid}$')
 
+    n_average = 35
     d.compute_disktmid(keeptvisc=False)
+    d.tmid = running_average(d.tmid, N=n_average)
     d.compute_hsurf()
+    d.hs = running_average(d.hs, N=n_average)
+    d.compute_flareindex()
+    d.flidx = running_average(d.flidx, N=n_average)
+    d.compute_flareangle_from_flareindex(inclrstar=True)
+    d.flang = running_average(d.flang, N=n_average)
     d.compute_cs_and_hp()
     d.compute_mean_opacity()
 
     # iterate the temperature
     if show_plots:
         f, ax = plt.subplots(2, 1, dpi=150, sharex=True)
+
     n_iter = 100
     for iter in range(n_iter):
         tmid_previous = d.tmid
         hs_previous = d.hs
+        flidx_previous = d.flidx
 
         d.compute_hsurf()
-        d.hs = running_average(d.hs, N=2)
+        d.hs = running_average(d.hs, N=n_average)
         d.hs = hs_previous + 0.08 * (d.hs - hs_previous)
 
         d.compute_flareindex()
+        d.flidx = running_average(d.flidx, N=n_average)
+        d.flidx = flidx_previous + 0.08 * (d.flidx - flidx_previous)
         d.compute_flareangle_from_flareindex(inclrstar=True)
-        d.compute_disktmid(keeptvisc=False)
-        d.tmid = running_average(d.tmid, N=2)
+        d.flang = running_average(d.flang, N=n_average)
 
+        d.compute_disktmid(keeptvisc=False)
+        d.tmid = running_average(d.tmid, N=n_average)
         d.tmid = tmid_previous + 0.08 * (d.tmid - tmid_previous)
 
         if all(np.abs(tmid_previous / d.tmid - 1) < 0.01):
             print(f"iteration to convergence: {iter}")
             break
-        else:
-            print(f"not converged, max change {max(np.abs(tmid_previous / d.tmid - 1))}")
+        # else:
+        #     print(f"not converged, max change {max(np.abs(tmid_previous / d.tmid - 1))}")
 
         d.compute_cs_and_hp()
         d.compute_mean_opacity()
 
         if show_plots:
-            if (iter % 9) == 0 and (iter > 50):
+            if (iter % 9) == 0 :
                 ax[0].loglog(d.r / au, d.hs / au, label=iter)
                 ax[1].loglog(d.r / au, d.tmid, label=iter)
 
+    d.tmid = running_average(d.tmid,  N=n_average)
+
     if show_plots:
-        ax[-1].set_xlim(left=120)
+        ax[-1].set_xlim(120, 400)
         ax[0].set_ylim(1e1, 6e1)
         ax[1].set_ylim(1e0, 5e1)
         ax[0].set_title("hs")
@@ -213,15 +227,12 @@ def make_disklab2d_model(
 
     disk2d.radial_raytrace()
 
-    n_iter = 10
-    if show_plots:
-        f, ax = plt.subplots(2, 1, dpi=150)
-        plt.suptitle("Vertical iterations")
+    n_iter = 20
     for iter in range(n_iter):
         disk2d.radial_raytrace()
         for i, vert in enumerate(disk2d.verts):
             vert.compute_rhogas_hydrostatic()
-            vert.rhogas = running_average(vert.rhogas, N=2)
+            vert.rhogas = running_average(vert.rhogas, N=n_average)
             vert.compute_mean_opacity()
             vert.irradiate_with_flaring_index()
 
@@ -232,17 +243,10 @@ def make_disklab2d_model(
             # vert.compute_viscous_heating()
 
             vert.solve_vert_rad_diffusion()
-            vert.tgas = running_average(vert.tgas, N=2)
+            vert.tgas = running_average(vert.tgas, N=n_average)
             vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
-            if show_plots:
-                if i == 80 and iter > 5:
-                    ax[0].loglog(vert.z / au, vert.rhogas, label=iter)
-                    ax[1].loglog(vert.z / au, vert.tgas, label=iter)
             for dust in vert.dust:
                 dust.compute_settling_mixing_equilibrium()
-    if show_plots:
-        plt.legend()
-        plt.show()
 
     # --- done setting up the radmc3d model ---
     return disk2d

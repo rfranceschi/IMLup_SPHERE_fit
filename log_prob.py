@@ -70,9 +70,9 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output = Capturing()
 
     if not (
-            (-5 < params['size_exp'] < 5) and
-            (1e-5 < params['amax_coeff'] < 1e5) and
-            (-5 < params['amax_exp'] < 5) and
+            (0 < params['size_exp'] < 2) and
+            (1e-5 < params['amax_coeff'] < 1e1) and
+            (0 < params['amax_exp'] < 2) and
             (1e-6 < params['d2g_coeff'] < 1e2) and
             (0 < params['d2g_exp'] < 3)):
         print("Parameters out of prior")
@@ -406,11 +406,10 @@ def main():
     p0 = [0.6266170704991851,  # size_exp  a**(4 - size_exp) grain size distribution
           0.043481430748301644,  # amax_coeff
           4.377754651621798,  # amax_exp
-          0.0023342373147083022,  # d2g_coeff
-          1.3824066621806903,  # d2g_exp
+          0.0012,  # d2g_coeff
+          0.8,  # d2g_exp
           ]
 
-    #
     #  - dust density at 1 au ~ 200 g / cm3
     #  - get rid of gas parameters and use maps values
     #  - check what happens to this model if we set the d2g exponent to 0
