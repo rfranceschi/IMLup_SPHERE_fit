@@ -55,6 +55,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         "amax_exp": parameters[2],
         "d2g_coeff": parameters[3],
         "d2g_exp": parameters[4],
+        "r_crit": parameters[5]
     }
 
     temp_number = random.getrandbits(32)

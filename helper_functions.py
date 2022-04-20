@@ -58,6 +58,7 @@ def make_disklab2d_model(
     amax_exp = parameters[2]
     d2g_coeff = parameters[3]
     d2g_exp = parameters[4]
+    r_crit = parameters[5]
 
     # hard-coded gas parameters
     sigma_coeff = 28.4
@@ -82,7 +83,7 @@ def make_disklab2d_model(
 
     #  experiment d2g distribution
     # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
-    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (300 * au)))
+    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (r_crit * au)))
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)

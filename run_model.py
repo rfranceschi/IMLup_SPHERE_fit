@@ -190,19 +190,21 @@ a_max_300 = options['lam_mm'] / (2 * np.pi)
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
 # sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
 # sigma_exp_0 = np.random.normal(1, 0.3, nwalkers)
-size_exp_0 = np.abs(np.random.normal(0.6, 0.2, nwalkers))
-a_max_0 = np.random.normal(a_max_300, 0.3 * a_max_300, nwalkers)
-a_max_exp_0 = np.random.normal(4, 0.5, nwalkers)
-d2g_coeff_0 = np.random.normal(0.001, 0.0005, nwalkers)
-d2g_exp_0 = np.abs(np.random.normal(0.8, 0.2, nwalkers))
+size_exp_0 = np.abs(np.random.normal(1.50, 0.2, nwalkers))
+a_max_0 = np.random.normal(0.0025, 0.1 * a_max_300, nwalkers)
+a_max_exp_0 = np.random.normal(4.53, 0.5, nwalkers)
+d2g_coeff_0 = np.random.normal(0.0055, 0.0005, nwalkers)
+d2g_exp_0 = np.abs(np.random.normal(1.44, 0.1, nwalkers))
+r_crit_0 = np.random.normal(300, 30, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_0,
                 a_max_0,
                 a_max_exp_0,
                 d2g_coeff_0,
-                d2g_exp_0)
-               ).T
+                d2g_exp_0,
+                r_crit_0,
+                )).T
 
 # hpt save file
 filename = 'chain.hdf5'
