@@ -183,8 +183,8 @@ pickle.dump(options, open("options.pickle", "wb"))
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 10  # it  does not work with fewer  walkers than the number  of dimensions
-ndim = 5
+nwalkers = 12  # it  does not work with fewer  walkers than the number  of dimensions
+ndim = 6
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 # Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
