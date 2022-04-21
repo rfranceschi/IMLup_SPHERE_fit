@@ -55,7 +55,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         "amax_exp": parameters[2],
         "d2g_coeff": parameters[3],
         "d2g_exp": parameters[4],
-        "r_crit": parameters[5]
+        "cutoff_r": parameters[5],
+        "cutoff_exp": parameters[6],
     }
 
     temp_number = random.getrandbits(32)
@@ -71,16 +72,16 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output = Capturing()
 
     if not (
-            (0 < params['size_exp'] < 4) and
-            (1e-5 < params['amax_coeff'] < 1e1) and
-            (0 < params['amax_exp'] < 10) and
-            (1e-6 < params['d2g_coeff'] < 1e-1) and
-            (0 < params['d2g_exp'] < 3)):
+            (0 < params['size_exp'] < 4)
+            and (1e-5 < params['amax_coeff'] < 1e1)
+            and (0 < params['amax_exp'] < 10)
+            and (1e-6 < params['d2g_coeff'] < 1e-1)
+            and (0 < params['d2g_exp'] < 3)
+            and (280 < params['cutoff_r'] < 320)
+            and (params['cutoff_exp'] > 0)
+    ):
         print("Parameters out of prior")
         return -np.Inf, -1
-
-    # else:
-    #     logP = - np.log(grain_size) - np.log(disk_mass) - np.log(d2g)
 
     radmc3d_exec = options['radmc3d_exec']
 
@@ -220,7 +221,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     with output:
         # a bit complicated probably due to difference in pixel center / interface
         sizeau = np.diff(iq_sca_obs.xaxis[[-1, 0]])[0] * options['distance'] * iq_sca_obs.nxpix / (
-            iq_sca_obs.nxpix - 1) * 1.0000000000000286
+                iq_sca_obs.nxpix - 1) * 1.0000000000000286
         radmc_call_sca = f"image incl {options['inc']} posang {options['PA'] - 90} npix {iq_sca_obs.data.shape[0]} lambda {options['lam_sca'] * 1e4} sizeau {sizeau} setthreads 4 stokes"
         disklab.radmc3d.radmc3d(
             radmc_call_sca,
@@ -334,7 +335,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
         rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
-            1 * u.Jy).cgs.value
+                1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
             profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
@@ -404,18 +405,19 @@ def main():
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
     # original
-    p0 = [0.6266170704991851,  # size_exp  a**(4 - size_exp) grain size distribution
-          0.043481430748301644,  # amax_coeff
-          4.377754651621798,  # amax_exp
-          0.0012,  # d2g_coeff
-          0.8,  # d2g_exp
+    p0 = [1.46,  # size_exp  a**(4 - size_exp) grain size distribution
+          0.002994968430625354,  # amax_coeff
+          4.712199175837191,  # amax_exp
+          0.005380975968574011,  # d2g_coeff
+          1.4538269851851968,  # d2g_exp
+          292.76509677460365,  # r_crit
           ]
 
     #  - dust density at 1 au ~ 200 g / cm3
     #  - get rid of gas parameters and use maps values
     #  - check what happens to this model if we set the d2g exponent to 0
     #  - see what the new DIANA opacity change this model
-    #  - try different d2g distributions (constant, brokwen power law...)
+    #  - try different d2g distributions (constant, broken power law...)
 
     # i_param = 4
     # param_array = np.linspace(0.1, 1, 4, endpoint=True)
@@ -438,6 +440,7 @@ def main():
 
 if __name__ == '__main__':
     import time
+
     start_time = time.time()
     main()
     print(f"---- execution time {time.time() - start_time} ----")

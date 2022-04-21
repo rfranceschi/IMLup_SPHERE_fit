@@ -183,19 +183,21 @@ pickle.dump(options, open("options.pickle", "wb"))
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 12  # it  does not work with fewer  walkers than the number  of dimensions
-ndim = 6
+nwalkers = 14  # it  does not work with fewer  walkers than the number  of dimensions
+ndim = 7
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
-# Setting the priors for some parameters instead of letting them be uniform randoms between (0.1)
-# sigma_coeff_0 = np.random.normal(28.4, 3, nwalkers)
-# sigma_exp_0 = np.random.normal(1, 0.3, nwalkers)
-size_exp_0 = np.abs(np.random.normal(1.50, 0.2, nwalkers))
+
+size_exp_0 = np.random.normal(1.50, 0.2, nwalkers)
+size_exp_0 = size_exp_0[np.nonzero(size_exp_0 > 0)[0]]
 a_max_0 = np.random.normal(0.0025, 0.1 * a_max_300, nwalkers)
 a_max_exp_0 = np.random.normal(4.53, 0.5, nwalkers)
 d2g_coeff_0 = np.random.normal(0.0055, 0.0005, nwalkers)
-d2g_exp_0 = np.abs(np.random.normal(1.44, 0.1, nwalkers))
-r_crit_0 = np.random.normal(300, 30, nwalkers)
+d2g_exp_0 = np.random.normal(1.44, 0.2, nwalkers)
+d2g_exp_0 = d2g_exp_0[np.nonzero(d2g_exp_0 > 0)[0]]
+cutoff_r_0 = np.random.normal(300, 4, nwalkers)
+cutoff_exp_0 = np.random.normal(0.8, 0.3, nwalkers)
+cutoff_exp_0 = cutoff_exp_0[np.nonzero(cutoff_exp_0 > 0)[0]]
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_0,
@@ -203,14 +205,15 @@ p0 = np.vstack((size_exp_0,
                 a_max_exp_0,
                 d2g_coeff_0,
                 d2g_exp_0,
-                r_crit_0,
+                cutoff_r_0,
+                cutoff_exp_0,
                 )).T
 
 # hpt save file
 filename = 'chain.hdf5'
 
 backend = emcee.backends.HDFBackend(filename)
-# backend.reset(nwalkers, ndim)
+backend.reset(nwalkers, ndim)
 
 procs = 10  # 30
 steps = 1000  # 1000

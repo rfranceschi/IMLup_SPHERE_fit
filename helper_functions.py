@@ -5,12 +5,13 @@ import tempfile
 import subprocess
 
 import matplotlib.pyplot as plt
+from astropy.modeling.functional_models import Exponential1D
 from matplotlib import lines, text
 from matplotlib.colors import Normalize
 import numpy as np
 import tqdm
 
-from astropy.modeling.powerlaws import SmoothlyBrokenPowerLaw1D
+from astropy.modeling.powerlaws import PowerLaw1D
 import astropy.constants as c
 from astropy import units as u
 from gofish import imagecube
@@ -33,9 +34,9 @@ def movingaverage(interval, window_size):
     return np.convolve(interval, window, 'same')
 
 
-def running_average(a, N=1):
-    b = np.concatenate((np.ones(N) * a[0], a, np.ones(N) * a[-1]))
-    return np.convolve(b, np.ones(2 * N + 1) / (2 * N + 1), mode='valid')
+def running_average(a, n=1):
+    b = np.concatenate((np.ones(n) * a[0], a, np.ones(n) * a[-1]))
+    return np.convolve(b, np.ones(2 * n + 1) / (2 * n + 1), mode='valid')
 
 
 def make_disklab2d_model(
@@ -58,7 +59,8 @@ def make_disklab2d_model(
     amax_exp = parameters[2]
     d2g_coeff = parameters[3]
     d2g_exp = parameters[4]
-    r_crit = parameters[5]
+    cutoff_r = parameters[5]
+    cutoff_exp = parameters[6]
 
     # hard-coded gas parameters
     sigma_coeff = 28.4
@@ -83,7 +85,8 @@ def make_disklab2d_model(
 
     #  experiment d2g distribution
     # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
-    d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (r_crit * au)))
+    # d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (r_crit * au)))
+    d2g = PowerLaw1D(d2g_coeff, d2g_exp)(d.r) * Exponential1D(1, -cutoff_exp)(d.r / (cutoff_r * au))
     a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
@@ -144,13 +147,13 @@ def make_disklab2d_model(
 
     n_average = 35
     d.compute_disktmid(keeptvisc=False)
-    d.tmid = running_average(d.tmid, N=n_average)
+    d.tmid = running_average(d.tmid, n=n_average)
     d.compute_hsurf()
-    d.hs = running_average(d.hs, N=n_average)
+    d.hs = running_average(d.hs, n=n_average)
     d.compute_flareindex()
-    d.flidx = running_average(d.flidx, N=n_average)
+    d.flidx = running_average(d.flidx, n=n_average)
     d.compute_flareangle_from_flareindex(inclrstar=True)
-    d.flang = running_average(d.flang, N=n_average)
+    d.flang = running_average(d.flang, n=n_average)
     d.compute_cs_and_hp()
     d.compute_mean_opacity()
 
@@ -165,17 +168,17 @@ def make_disklab2d_model(
         flidx_previous = d.flidx
 
         d.compute_hsurf()
-        d.hs = running_average(d.hs, N=n_average)
+        d.hs = running_average(d.hs, n=n_average)
         d.hs = hs_previous + 0.08 * (d.hs - hs_previous)
 
         d.compute_flareindex()
-        d.flidx = running_average(d.flidx, N=n_average)
+        d.flidx = running_average(d.flidx, n=n_average)
         d.flidx = flidx_previous + 0.08 * (d.flidx - flidx_previous)
         d.compute_flareangle_from_flareindex(inclrstar=True)
-        d.flang = running_average(d.flang, N=n_average)
+        d.flang = running_average(d.flang, n=n_average)
 
         d.compute_disktmid(keeptvisc=False)
-        d.tmid = running_average(d.tmid, N=n_average)
+        d.tmid = running_average(d.tmid, n=n_average)
         d.tmid = tmid_previous + 0.08 * (d.tmid - tmid_previous)
 
         if all(np.abs(tmid_previous / d.tmid - 1) < 0.01):
@@ -192,7 +195,7 @@ def make_disklab2d_model(
                 ax[0].loglog(d.r / au, d.hs / au, label=iter)
                 ax[1].loglog(d.r / au, d.tmid, label=iter)
 
-    d.tmid = running_average(d.tmid,  N=n_average)
+    d.tmid = running_average(d.tmid, n=n_average)
 
     if show_plots:
         ax[-1].set_xlim(120, 400)
@@ -233,7 +236,7 @@ def make_disklab2d_model(
         disk2d.radial_raytrace()
         for i, vert in enumerate(disk2d.verts):
             vert.compute_rhogas_hydrostatic()
-            vert.rhogas = running_average(vert.rhogas, N=n_average)
+            vert.rhogas = running_average(vert.rhogas, n=n_average)
             vert.compute_mean_opacity()
             vert.irradiate_with_flaring_index()
 
@@ -244,7 +247,7 @@ def make_disklab2d_model(
             # vert.compute_viscous_heating()
 
             vert.solve_vert_rad_diffusion()
-            vert.tgas = running_average(vert.tgas, N=n_average)
+            vert.tgas = running_average(vert.tgas, n=n_average)
             vert.tgas = (vert.tgas ** 4 + 15 ** 4) ** (1 / 4)
             for dust in vert.dust:
                 dust.compute_settling_mixing_equilibrium()
