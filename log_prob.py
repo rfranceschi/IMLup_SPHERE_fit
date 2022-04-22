@@ -412,7 +412,7 @@ def main():
         0.004884596954286907,  # d2g_coeff
         0.8629308483385377,  # d2g_exp
         288.6181386417387,  # cutoff_r
-        0.43613799855109975,  # cutoff_exp
+        5,  # cutoff_exp
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
