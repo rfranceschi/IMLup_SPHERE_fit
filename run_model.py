@@ -196,7 +196,7 @@ d2g_coeff_0 = np.random.normal(0.0055, 0.0005, nwalkers)
 d2g_exp_0 = np.random.normal(1.44, 0.2, nwalkers)
 d2g_exp_0 = d2g_exp_0[np.nonzero(d2g_exp_0 > 0)[0]]
 cutoff_r_0 = np.random.normal(300, 4, nwalkers)
-cutoff_exp_0 = np.random.normal(0.8, 0.3, nwalkers)
+cutoff_exp_0 = np.random.normal(5, 1.5, nwalkers)
 cutoff_exp_0 = cutoff_exp_0[np.nonzero(cutoff_exp_0 > 0)[0]]
 
 # Input matrix of priors
