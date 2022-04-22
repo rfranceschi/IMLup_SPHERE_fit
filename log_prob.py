@@ -405,12 +405,13 @@ def main():
     a_max_300 = options['lam_mm'] / (2 * np.pi)
 
     # original
-    p0 = [1.46,  # size_exp  a**(4 - size_exp) grain size distribution
-          0.002994968430625354,  # amax_coeff
-          4.712199175837191,  # amax_exp
-          0.005380975968574011,  # d2g_coeff
-          1.4538269851851968,  # d2g_exp
-          292.76509677460365,  # r_crit
+    p0 = [0.5566964732911749,  # size_exp  a**(4 - size_exp) grain size distribution
+          0.00033416650113200547,  # amax_coeff
+          5.487921276409875,  # amax_exp
+          0.008303271033071307,  # d2g_coeff
+          0.6556462174891315,  # d2g_exp
+          302.3742500203422,  # cutoff_r
+          2.6786056897973523,  # cutoff_exp
           ]
 
     #  - dust density at 1 au ~ 200 g / cm3
