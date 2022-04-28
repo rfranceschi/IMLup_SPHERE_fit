@@ -402,17 +402,18 @@ def main():
     with open(fname, "rb") as fb:
         options = pickle.load(fb)
 
-    a_max_300 = options['lam_mm'] / (2 * np.pi)
+    # a_max_300 = options['lam_mm'] / (2 * np.pi)
+    options['rin'] = 0.2 * au
 
     # original
     p0 = [
-        1.815825491608663,  # size_exp  a**(4 - size_exp) grain size distribution
-        0.00112022323566748,  # amax_coeff
-        4.437127450967644,  # amax_exp
-        0.004884596954286907,  # d2g_coeff
-        0.8629308483385377,  # d2g_exp
-        288.6181386417387,  # cutoff_r
-        5,  # cutoff_exp
+        1.6351976016062482,  # size_exp  a**(4 - size_exp) grain size distribution
+        0.011310322874341382,  # amax_coeff
+        3.984320907627053,  # amax_exp
+        0.005161020515329049,  # d2g_coeff
+        0.8985218114780861,  # d2g_exp
+        310.94133025952095,  # cutoff_r
+        0.27299288601176425,  # cutoff_exp
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
