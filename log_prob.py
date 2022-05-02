@@ -78,7 +78,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
             and (280 < params['cutoff_r'] < 320)
-            and (params['cutoff_exp'] > 0)
+            and (params['cutoff_exp'] < 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -407,13 +407,13 @@ def main():
 
     # original
     p0 = [
-        1.6351976016062482,  # size_exp  a**(4 - size_exp) grain size distribution
-        0.011310322874341382,  # amax_coeff
-        3.984320907627053,  # amax_exp
-        0.005161020515329049,  # d2g_coeff
-        0.8985218114780861,  # d2g_exp
-        310.94133025952095,  # cutoff_r
-        0.27299288601176425,  # cutoff_exp
+        1.5638736831156737,
+        0.0036091924044657706,
+        4.245828230785935,
+        0.005023645953581393,
+        0.9937083166583416,
+        305.0800494983576,
+        0.05700862801446251,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
