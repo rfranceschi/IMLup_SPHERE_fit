@@ -51,12 +51,13 @@ def calculate_chisquared(sim_data, obs_data, error):
 def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
         "size_exp": parameters[0],
-        "amax_coeff": parameters[1],
-        "amax_exp": parameters[2],
-        "d2g_coeff": parameters[3],
-        "d2g_exp": parameters[4],
-        "cutoff_r": parameters[5],
-        "cutoff_exp": parameters[6],
+        # "amax_coeff": parameters[1],
+        "amax_exp": parameters[1],
+        "d2g_coeff": parameters[2],
+        "d2g_exp": parameters[3],
+        # "cutoff_r": parameters[5],
+        "cutoff_exp_d2g": parameters[4],
+        "cutoff_exp_amax": parameters[5],
     }
 
     temp_number = random.getrandbits(32)
@@ -73,12 +74,13 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     if not (
             (0 < params['size_exp'] < 4)
-            and (1e-5 < params['amax_coeff'] < 1e1)
+            # and (1e-5 < params['amax_coeff'] < 1e1)
             and (0 < params['amax_exp'] < 10)
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
-            and (280 < params['cutoff_r'] < 320)
-            and (params['cutoff_exp'] > 0)
+            # and (280 < params['cutoff_r'] < 320)
+            and (params['cutoff_exp_d2g'] > 0)
+            and (params['cutoff_exp_amax'] > 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -416,12 +418,11 @@ def main():
     # original
     p0 = [
         1.829522642068542,
-        0.02,
-        4.092729209222392,
+        4.,
         0.005372311893772412,
         1.4097856274669591,
-        304.12209075706255,
-        5,
+        1,
+        3,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
