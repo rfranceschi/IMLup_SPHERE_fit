@@ -78,7 +78,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
             and (280 < params['cutoff_r'] < 320)
-            and (params['cutoff_exp'] < 0)
+            and (params['cutoff_exp'] > 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -171,7 +171,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         return -np.inf, temp_number
 
     # read as image cube and copy beam properties from observations
-    with  output:
+    with output:
         iq_mm_sim = imagecube(str(fname_mm_sim))
         iq_mm_sim.bmaj, iq_mm_sim.bmin, iq_mm_sim.bpa = iq_mm_obs.beam
         iq_mm_sim.beamarea_arcsec = iq_mm_sim._calculate_beam_area_arcsec()
@@ -213,6 +213,14 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     x_beam_as = np.sqrt(iq_mm_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
     rms_weighted = rms / np.sqrt(x_mm_obs / (2 * np.pi * x_beam_as))
+
+    output_dict['y_mm_sim'] = y_mm_sim
+    output_dict['y_mm_obs'] = y_mm_obs
+    output_dict['x_mm_sim'] = x_mm_sim
+    output_dict['x_mm_obs'] = x_mm_obs
+    output_dict['dy_mm_obs'] = dy_mm_obs
+    output_dict['dy_mm_sim'] = dy_mm_sim
+    output_dict['error'] = np.maximum(rms_weighted, dy_mm_obs)
 
     chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
 
@@ -407,13 +415,13 @@ def main():
 
     # original
     p0 = [
-        1.5638736831156737,
-        0.0036091924044657706,
-        4.245828230785935,
-        0.005023645953581393,
-        0.9937083166583416,
-        305.0800494983576,
-        0.05700862801446251,
+        1.829522642068542,
+        0.02,
+        4.092729209222392,
+        0.005372311893772412,
+        1.4097856274669591,
+        304.12209075706255,
+        5,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
