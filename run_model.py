@@ -188,16 +188,13 @@ ndim = 7
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 
-size_exp_0 = np.random.normal(1.50, 0.2, nwalkers)
-size_exp_0 = size_exp_0[np.nonzero(size_exp_0 > 0)[0]]
+size_exp_0 = np.absolute(np.random.normal(1.50, 0.2, nwalkers))
 a_max_0 = np.random.normal(0.0025, 0.1 * a_max_300, nwalkers)
 a_max_exp_0 = np.random.normal(4.53, 0.5, nwalkers)
 d2g_coeff_0 = np.random.normal(0.0055, 0.0005, nwalkers)
-d2g_exp_0 = np.random.normal(1.44, 0.2, nwalkers)
-d2g_exp_0 = d2g_exp_0[np.nonzero(d2g_exp_0 > 0)[0]]
+d2g_exp_0 = np.absolute(np.random.normal(1.44, 0.2, nwalkers))
 cutoff_r_0 = np.random.normal(300, 4, nwalkers)
-cutoff_exp_0 = - np.random.normal(5, 1.5, nwalkers)
-cutoff_exp_0 = cutoff_exp_0[np.nonzero(cutoff_exp_0 > 0)[0]]
+cutoff_exp_0 = np.absolute(np.random.normal(5, 1.5, nwalkers))
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_0,
