@@ -51,13 +51,12 @@ def calculate_chisquared(sim_data, obs_data, error):
 def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
         "size_exp": parameters[0],
-        # "amax_coeff": parameters[1],
         "amax_exp": parameters[1],
         "d2g_coeff": parameters[2],
         "d2g_exp": parameters[3],
-        # "cutoff_r": parameters[5],
         "cutoff_exp_d2g": parameters[4],
         "cutoff_exp_amax": parameters[5],
+        "amax_coeff": parameters[6],
     }
 
     temp_number = random.getrandbits(32)
@@ -74,13 +73,13 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     if not (
             (0 < params['size_exp'] < 4)
-            # and (1e-5 < params['amax_coeff'] < 1e1)
             and (0 < params['amax_exp'] < 10)
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
             # and (280 < params['cutoff_r'] < 320)
             and (params['cutoff_exp_d2g'] > 0)
             and (params['cutoff_exp_amax'] > 0)
+            and (1e-5 < params['amax_coeff'] < 1e1)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -426,10 +425,6 @@ def main():
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
-    #  - get rid of gas parameters and use maps values
-    #  - check what happens to this model if we set the d2g exponent to 0
-    #  - see what the new DIANA opacity change this model
-    #  - try different d2g distributions (constant, broken power law...)
 
     # i_param = 4
     # param_array = np.linspace(0.1, 1, 4, endpoint=True)

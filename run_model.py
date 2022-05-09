@@ -188,24 +188,31 @@ ndim = 7
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 
-size_exp_0 = np.absolute(np.random.normal(1.50, 0.2, nwalkers))
-# a_max_0 = np.random.normal(0.0025, 0.1 * a_max_300, nwalkers)
-a_max_exp_0 = np.random.normal(4.53, 0.5, nwalkers)
-d2g_coeff_0 = np.random.normal(0.0055, 0.0005, nwalkers)
-d2g_exp_0 = np.absolute(np.random.normal(1.44, 0.2, nwalkers))
-# cutoff_r_0 = np.random.normal(300, 4, nwalkers)
-cutoff_exp_d2g_0 = np.absolute(np.random.normal(5, 1.5, nwalkers))
-cutoff_exp_amax_0 = np.absolute(np.random.normal(5, 1.5, nwalkers))
+size_exp = 0.75
+amax_exp = 6.56
+d2g_coeff = 0.01
+d2g_exp = 0.86
+cutoff_exp_d2g = 0.05
+cutoff_exp_amax = 3.55
+amax_coeff = 0.02
+
+size_exp_array = np.absolute(np.random.normal(size_exp, 0.1 *  size_exp, nwalkers))
+a_max_exp_array = np.random.normal(amax_exp, 0.1 * amax_exp, nwalkers)
+d2g_coeff_array = np.random.normal(d2g_coeff, 0.1 * d2g_coeff, nwalkers)
+d2g_exp_array = np.absolute(np.random.normal(d2g_exp, 0.1 * d2g_exp, nwalkers))
+cutoff_exp_d2g_array = np.absolute(np.random.normal(cutoff_exp_d2g, 0.1 * cutoff_exp_d2g, nwalkers))
+cutoff_exp_amax_array = np.absolute(np.random.normal(cutoff_exp_amax, 0.1 * cutoff_exp_amax, nwalkers))
+a_max_coeff_array = np.random.normal(amax_coeff, 0.1 * amax_exp, nwalkers)
 
 # Input matrix of priors
-p0 = np.vstack((size_exp_0,
+p0 = np.vstack((size_exp_array,
                 # a_max_0,
-                a_max_exp_0,
-                d2g_coeff_0,
-                d2g_exp_0,
+                a_max_exp_array,
+                d2g_coeff_array,
+                d2g_exp_array,
                 # cutoff_r_0,
-                cutoff_exp_d2g_0,
-                cutoff_exp_amax_0,
+                cutoff_exp_d2g_array,
+                cutoff_exp_amax_array,
                 )).T
 
 # hpt save file
