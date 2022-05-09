@@ -202,7 +202,7 @@ d2g_coeff_array = np.random.normal(d2g_coeff, 0.1 * d2g_coeff, nwalkers)
 d2g_exp_array = np.absolute(np.random.normal(d2g_exp, 0.1 * d2g_exp, nwalkers))
 cutoff_exp_d2g_array = np.absolute(np.random.normal(cutoff_exp_d2g, 0.1 * cutoff_exp_d2g, nwalkers))
 cutoff_exp_amax_array = np.absolute(np.random.normal(cutoff_exp_amax, 0.1 * cutoff_exp_amax, nwalkers))
-a_max_coeff_array = np.random.normal(amax_coeff, 0.1 * amax_exp, nwalkers)
+a_max_coeff_array = np.random.normal(amax_coeff, 0.1 * amax_coeff, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
