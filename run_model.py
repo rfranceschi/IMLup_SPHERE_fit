@@ -213,6 +213,7 @@ p0 = np.vstack((size_exp_array,
                 # cutoff_r_0,
                 cutoff_exp_d2g_array,
                 cutoff_exp_amax_array,
+                a_max_coeff_array,
                 )).T
 
 # hpt save file
