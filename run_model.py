@@ -188,12 +188,12 @@ ndim = 7
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 
-size_exp = 0.75
-amax_exp = 6.56
+size_exp = 0.72
+amax_exp = 7.11
 d2g_coeff = 0.01
-d2g_exp = 0.86
-cutoff_exp_d2g = 0.05
-cutoff_exp_amax = 3.55
+d2g_exp = 0.61
+cutoff_exp_d2g = 0.06
+cutoff_exp_amax = 2.38
 amax_coeff = 0.02
 
 size_exp_array = np.absolute(np.random.normal(size_exp, 0.1 *  size_exp, nwalkers))
