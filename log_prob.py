@@ -54,9 +54,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         "amax_exp": parameters[1],
         "d2g_coeff": parameters[2],
         "d2g_exp": parameters[3],
-        "cutoff_exp_d2g": parameters[4],
-        "cutoff_exp_amax": parameters[5],
-        "amax_coeff": parameters[6],
+        "amax_coeff": parameters[4],
     }
 
     temp_number = random.getrandbits(32)
@@ -76,9 +74,6 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (0 < params['amax_exp'] < 10)
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
-            # and (280 < params['cutoff_r'] < 320)
-            and (params['cutoff_exp_d2g'] > 0)
-            and (params['cutoff_exp_amax'] > 0)
             and (1e-5 < params['amax_coeff'] < 1e1)
     ):
         print("Parameters out of prior")
@@ -420,8 +415,6 @@ def main():
         7.592,
         0.007,
         0.352,
-        0.053,
-        2.657,
         0.020,
     ]
 
@@ -435,7 +428,7 @@ def main():
     #     params[i_param] = _param
     #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test_no_rc')
     print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:

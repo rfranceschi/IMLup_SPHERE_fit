@@ -186,33 +186,23 @@ pickle.dump(options, open("options.pickle", "wb"))
 nwalkers = 14  # it  does not work with fewer  walkers than the number  of dimensions
 ndim = 7
 
-a_max_300 = options['lam_mm'] / (2 * np.pi)
-
-size_exp = 0.72
-amax_exp = 7.11
-d2g_coeff = 0.01
-d2g_exp = 0.61
-cutoff_exp_d2g = 0.06
-cutoff_exp_amax = 2.38
-amax_coeff = 0.02
+size_exp = 0.657
+amax_exp = 7.592
+d2g_coeff = 0.007
+d2g_exp = 0.352
+amax_coeff = 0.020
 
 size_exp_array = np.absolute(np.random.normal(size_exp, 0.1 *  size_exp, nwalkers))
 a_max_exp_array = np.random.normal(amax_exp, 0.1 * amax_exp, nwalkers)
 d2g_coeff_array = np.random.normal(d2g_coeff, 0.1 * d2g_coeff, nwalkers)
 d2g_exp_array = np.absolute(np.random.normal(d2g_exp, 0.1 * d2g_exp, nwalkers))
-cutoff_exp_d2g_array = np.absolute(np.random.normal(cutoff_exp_d2g, 0.1 * cutoff_exp_d2g, nwalkers))
-cutoff_exp_amax_array = np.absolute(np.random.normal(cutoff_exp_amax, 0.1 * cutoff_exp_amax, nwalkers))
 a_max_coeff_array = np.random.normal(amax_coeff, 0.1 * amax_coeff, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
-                # a_max_0,
                 a_max_exp_array,
                 d2g_coeff_array,
                 d2g_exp_array,
-                # cutoff_r_0,
-                cutoff_exp_d2g_array,
-                cutoff_exp_amax_array,
                 a_max_coeff_array,
                 )).T
 
