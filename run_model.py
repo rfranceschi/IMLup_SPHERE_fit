@@ -183,8 +183,8 @@ pickle.dump(options, open("options.pickle", "wb"))
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 14  # it  does not work with fewer  walkers than the number  of dimensions
-ndim = 7
+nwalkers = 15  # it  does not work with fewer  walkers than the number  of dimensions
+ndim = 5
 
 size_exp = 0.657
 amax_exp = 7.592
