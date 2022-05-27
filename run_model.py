@@ -198,7 +198,7 @@ amax_coeff = 0.02
 cutoff_r = 300
 
 size_exp_array = np.absolute(size_exp * np.random.randn(nwalkers))
-a_max_exp_array = amax_exp * np.randorandnm.randn(nwalkers)
+a_max_exp_array = amax_exp * np.random.randn(nwalkers)
 d2g_coeff_array = d2g_coeff * np.random.randn(nwalkers)
 d2g_exp_array = np.absolute(d2g_exp * np.random.randn(nwalkers))
 cutoff_exp_d2g_array = np.absolute(cutoff_exp_d2g * np.random.randn(nwalkers))
