@@ -419,12 +419,12 @@ def main():
     # original
     p0 = [
         0.657,
-        7.592,
+        3.592,
         0.007,
         0.352,
-        0.053,
-        2.657,
+        0,
         0.020,
+        300,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
@@ -437,7 +437,7 @@ def main():
     #     params[i_param] = _param
     #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test_cutoff_amax_lower_cutoff')
     print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:
