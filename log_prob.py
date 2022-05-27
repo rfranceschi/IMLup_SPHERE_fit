@@ -55,8 +55,9 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         "d2g_coeff": parameters[2],
         "d2g_exp": parameters[3],
         "cutoff_exp_d2g": parameters[4],
-        "cutoff_exp_amax": parameters[5],
-        "amax_coeff": parameters[6],
+        "amax_coeff": parameters[5],
+        "cutoff_r": parameters[6],
+        # "cutoff_exp_amax": parameters[7],
     }
 
     temp_number = random.getrandbits(32)
@@ -77,9 +78,10 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
             # and (280 < params['cutoff_r'] < 320)
-            and (params['cutoff_exp_d2g'] > 0)
-            and (params['cutoff_exp_amax'] > 0)
+            and (params['cutoff_exp_d2g'] >= 0)
             and (1e-5 < params['amax_coeff'] < 1e1)
+            and (250 < params['cutoff_r'] < 350)
+            and (params['cutoff_exp_d2g'] >= 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1

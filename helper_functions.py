@@ -58,10 +58,10 @@ def make_disklab2d_model(
     amax_exp = parameters[1]
     d2g_coeff = parameters[2]
     d2g_exp = parameters[3]
-    cutoff_r = 300
     cutoff_exp_d2g = parameters[4]
-    cutoff_exp_amax = parameters[5]
-    amax_coeff = parameters[6]
+    amax_coeff = parameters[5]
+    cutoff_r = parameters[6]
+    # cutoff_exp_amax=parameters[7]
 
     # hard-coded gas parameters
     sigma_coeff = 28.4
