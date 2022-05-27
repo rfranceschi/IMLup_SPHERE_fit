@@ -81,7 +81,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (params['cutoff_exp_d2g'] >= 0)
             and (1e-5 < params['amax_coeff'] < 1e1)
             and (250 < params['cutoff_r'] < 350)
-            and (params['cutoff_exp_d2g'] >= 0)
+            # and (params['cutoff_exp_d2g'] >= 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
