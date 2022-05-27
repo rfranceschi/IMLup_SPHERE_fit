@@ -197,14 +197,14 @@ cutoff_exp_d2g = 0.06
 amax_coeff = 0.02
 cutoff_r = 300
 
-size_exp_array = np.absolute(np.random.random(size_exp, 0.1 *  size_exp, nwalkers))
-a_max_exp_array = np.random.random(amax_exp, 0.1 * amax_exp, nwalkers)
-d2g_coeff_array = np.random.random(d2g_coeff, 0.1 * d2g_coeff, nwalkers)
-d2g_exp_array = np.absolute(np.random.random(d2g_exp, 0.1 * d2g_exp, nwalkers))
-cutoff_exp_d2g_array = np.absolute(np.random.random(cutoff_exp_d2g, 0.1 * cutoff_exp_d2g, nwalkers))
+size_exp_array = np.absolute(size_exp * np.random.randn(nwalkers))
+a_max_exp_array = amax_exp * np.randorandnm.randn(nwalkers)
+d2g_coeff_array = d2g_coeff * np.random.randn(nwalkers)
+d2g_exp_array = np.absolute(d2g_exp * np.random.randn(nwalkers))
+cutoff_exp_d2g_array = np.absolute(cutoff_exp_d2g * np.random.randn(nwalkers))
 # cutoff_exp_amax_array = np.absolute(np.random.normal(cutoff_exp_amax, 0.1 * cutoff_exp_amax, nwalkers))
-a_max_coeff_array = np.random.random(amax_coeff, 0.1 * amax_coeff, nwalkers)
-cutoff_r_array = np.random.random(cutoff_r, 0.1 * cutoff_r,  nwalkers)
+a_max_coeff_array = amax_coeff * np.random.randn(nwalkers)
+cutoff_r_array = cutoff_r * np.random.randn(nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
