@@ -204,7 +204,7 @@ d2g_coeff_array = np.random.uniform(0.5 * d2g_coeff,  1.5 * d2g_coeff, nwalkers)
 d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
 cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  4, nwalkers))
 cutoff_exp_amax_array = np.absolute(np.random.uniform(0,  4, nwalkers))
-cutoff_r_array = np.random.uniform(250 * cutoff_r,  350 * cutoff_r, nwalkers)
+cutoff_r_array = np.random.uniform(250,  350, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
