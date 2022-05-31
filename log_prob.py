@@ -52,12 +52,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     params = {
         "size_exp": parameters[0],
         "amax_exp": parameters[1],
-        "d2g_coeff": parameters[2],
-        "d2g_exp": parameters[3],
-        "cutoff_exp_d2g": parameters[4],
-        "amax_coeff": parameters[5],
-        "cutoff_r": parameters[6],
-        # "cutoff_exp_amax": parameters[7],
+        "amax_coeff": parameters[2],
+        "d2g_coeff": parameters[3],
+        "d2g_exp": parameters[4],
+        "cutoff_exp_d2g": parameters[5],
+        "cutoff_exp_amax": parameters[6],
+        "cutoff_r": parameters[7],
     }
 
     temp_number = random.getrandbits(32)
@@ -75,13 +75,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     if not (
             (0 < params['size_exp'] < 4)
             and (0 < params['amax_exp'] < 10)
+            and (1e-5 < params['amax_coeff'] < 1e1)
             and (1e-6 < params['d2g_coeff'] < 1e-1)
             and (0 < params['d2g_exp'] < 3)
-            # and (280 < params['cutoff_r'] < 320)
             and (params['cutoff_exp_d2g'] >= 0)
-            and (1e-5 < params['amax_coeff'] < 1e1)
+            and (params['cutoff_exp_amax'] >= 0)
             and (250 < params['cutoff_r'] < 350)
-            # and (params['cutoff_exp_d2g'] >= 0)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -418,12 +417,13 @@ def main():
 
     # original
     p0 = [
-        0.657,
-        3.592,
-        0.007,
-        0.352,
-        0,
-        0.020,
+        0.72,
+        7.11,
+        0.02,
+        0.01,
+        0.61,
+        0.06,
+        0.05,
         300,
     ]
 
@@ -437,7 +437,7 @@ def main():
     #     params[i_param] = _param
     #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test_cutoff_amax_lower_cutoff')
+    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)
 
     # with open('run_results.txt', 'a') as fff:

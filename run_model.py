@@ -190,32 +190,30 @@ a_max_300 = options['lam_mm'] / (2 * np.pi)
 
 size_exp = 0.72
 amax_exp = 7.11
+amax_coeff = 0.02
 d2g_coeff = 0.01
 d2g_exp = 0.61
 cutoff_exp_d2g = 0.06
-# cutoff_exp_amax = 2.38
-amax_coeff = 0.02
+cutoff_exp_amax = 0.05
 cutoff_r = 300
 
-size_exp_array = np.absolute(np.random.uniform(0.8 * size_exp, 1.2 * size_exp, nwalkers))
-a_max_exp_array = np.random.uniform(0.8 * amax_exp,  1.2 * amax_exp, nwalkers)
-d2g_coeff_array = np.random.uniform(0.8 * d2g_coeff,  1.2 * d2g_coeff, nwalkers)
-d2g_exp_array = np.absolute(np.random.uniform(0.8 * d2g_exp,  1.2 * d2g_exp, nwalkers))
-cutoff_exp_d2g_array = np.absolute(np.random.uniform(0.8 * cutoff_exp_d2g,  1.2 * cutoff_exp_d2g, nwalkers))
-# cutoff_exp_amax_array = np.absolute(np.random.normal(cutoff_exp_amax, 0.1 * cutoff_exp_amax, nwalkers))
-a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.2 * amax_coeff, nwalkers)
-cutoff_r_array = np.random.uniform(0.8 * cutoff_r,  1.2 * cutoff_r, nwalkers)
+size_exp_array = np.absolute(np.random.uniform(0.5 * size_exp, 1.5 * size_exp, nwalkers))
+a_max_exp_array = np.random.uniform(0, 10, nwalkers)
+a_max_coeff_array = np.random.uniform(0.5 * amax_coeff,  1.5 * amax_coeff, nwalkers)
+d2g_coeff_array = np.random.uniform(0.5 * d2g_coeff,  1.5 * d2g_coeff, nwalkers)
+d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
+cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  4, nwalkers))
+cutoff_exp_amax_array = np.absolute(np.random.normal(0,  4, nwalkers))
+cutoff_r_array = np.random.uniform(250 * cutoff_r,  350 * cutoff_r, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
-                # a_max_0,
                 a_max_exp_array,
+                a_max_coeff_array,
                 d2g_coeff_array,
                 d2g_exp_array,
-                # cutoff_r_0,
                 cutoff_exp_d2g_array,
-                # cutoff_exp_amax_array,
-                a_max_coeff_array,
+                cutoff_exp_amax_array,
                 cutoff_r_array
                 )).T
 
@@ -225,7 +223,7 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 backend.reset(nwalkers, ndim)
 
-procs = 10  # 30
+procs = 16  # 30
 steps = 1000  # 1000
 
 if procs > 1:
