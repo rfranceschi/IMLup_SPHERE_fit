@@ -80,7 +80,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (0 <= params['d2g_exp'] <= 3)
             and (params['cutoff_exp_d2g'] >= 0)
             and (params['cutoff_exp_amax'] >= 0)
-            and (250 <= params['cutoff_r'] <= 350)
+            and (230 <= params['cutoff_r'] <= 370)
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -417,14 +417,14 @@ def main():
 
     # original
     p0 = [
-        0.72,
-        7.11,
-        0.02,
-        0.01,
-        0.61,
-        0.06,
+        0.637,
+        9.911,
+        0.029,
+        0.008,
+        0.269,
         0.05,
-        300,
+        0.05,
+        272.811,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
