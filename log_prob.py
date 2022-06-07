@@ -74,7 +74,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     if not (
             (0 <= params['size_exp'] <= 4)
-            and (0 <= params['amax_exp'] <= 10)
+            and (0 <= params['amax_exp'] <= 15)
             and (1e-5 <= params['amax_coeff'] <= 1e1)
             and (1e-6 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
