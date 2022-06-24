@@ -337,7 +337,10 @@ def get_profile_from_fits(fname, clip=2.5, show_plots=False, inc=0, PA=0, z0=0.0
     if norm is not None and r_norm is not None:
         raise ValueError('only norm or r_norm can be set, not both!')
 
-    data = imagecube(fname, FOV=clip)
+    if isinstance(fname, imagecube):
+        data = fname
+    else:
+        data = imagecube(fname, FOV=clip)
 
     if beam is not None:
         data.bmaj, data.bmin, data.bpa = beam
