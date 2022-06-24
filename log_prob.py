@@ -199,8 +199,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
         i_max = min(len(x_mm_obs), len(x_mm_sim)) - 1
-        i_min_obs = x_mm_obs.searchsorted(1.0)
-        i_min_sim = x_mm_sim.searchsorted(1.0)
+        i_min_obs = x_mm_obs.searchsorted(1.1)
+        i_min_sim = x_mm_sim.searchsorted(1.1)
         x_mm_sim = x_mm_sim[i_min_sim:i_max]
         y_mm_sim = y_mm_sim[i_min_sim:i_max]
         dy_mm_sim = dy_mm_sim[i_min_sim:i_max]
@@ -336,8 +336,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         profile_sim = profiles_sca_sim[key]
 
         # we ignore the inner 1 arcsec as we are interested in the outer disk
-        i_obs_0 = profile_obs['x'].searchsorted(1.0)
-        i_sim_0 = profile_sim['x'].searchsorted(1.0)
+        i_obs_0 = profile_obs['x'].searchsorted(1.1)
+        i_sim_0 = profile_sim['x'].searchsorted(1.1)
         max_len = min(len(profile_obs['x']), len(profile_sim['x'])) - 1
 
         assert np.allclose(profile_sim['x'][i_sim_0:max_len],
