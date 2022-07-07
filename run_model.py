@@ -190,7 +190,7 @@ a_max_300 = options['lam_mm'] / (2 * np.pi)
 
 size_exp = 0.72
 amax_exp = 7.11
-amax_coeff = 0.02
+amax_coeff = 0.025
 d2g_coeff = 0.01
 d2g_exp = 0.61
 cutoff_exp_d2g = 0.06
@@ -199,7 +199,7 @@ cutoff_r = 300
 
 size_exp_array = np.absolute(np.random.uniform(0.5 * size_exp, 1.5 * size_exp, nwalkers))
 a_max_exp_array = np.random.uniform(0, 15, nwalkers)
-a_max_coeff_array = np.random.uniform(0.5 * amax_coeff,  1.5 * amax_coeff, nwalkers)
+a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.2 * amax_coeff, nwalkers)
 d2g_coeff_array = np.random.uniform(0.5 * d2g_coeff,  1.5 * d2g_coeff, nwalkers)
 d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
 cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  20, nwalkers))

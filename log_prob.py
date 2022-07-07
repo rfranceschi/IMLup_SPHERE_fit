@@ -75,12 +75,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     if not (
             (0 <= params['size_exp'] <= 4)
             and (0 <= params['amax_exp'] <= 15)
-            and (1e-5 <= params['amax_coeff'] <= 1e1)
+            and (0.02 <= params['amax_coeff'] <= 0.035)
             and (1e-6 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
             and (params['cutoff_exp_d2g'] >= 0)
             and (params['cutoff_exp_amax'] >= 0)
-            and (230 <= params['cutoff_r'] <= 370)
+            and (230 <= params['cutoff_r'])
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -413,39 +413,23 @@ def main():
         options = pickle.load(fb)
 
     # a_max_300 = options['lam_mm'] / (2 * np.pi)
-    options['rin'] = 0.2 * au
 
     # original
     p0 = [
-        0.637,
-        9.911,
-        0.029,
-        0.008,
-        0.269,
-        0.05,
-        0.05,
-        272.811,
-    ]
+        0.607077,
+        11.407141,
+        0.027,
+        0.003559,
+        0.889130,
+        16.738327,
+        19.963845,
+        363.160482,
+     ]
 
     #  - dust density at 1 au ~ 200 g / cm3
 
-    # i_param = 4
-    # param_array = np.linspace(0.1, 1, 4, endpoint=True)
-    #
-    # for _i, _param in enumerate(param_array):
-    #     params = p0
-    #     params[i_param] = _param
-    #     prob, blob = log_prob(params, options, debugging=True, run_id=f'p{i_param}_{_param:.1f}')
-
     prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)
-
-    # with open('run_results.txt', 'a') as fff:
-    #     for i, _par in enumerate(param_change):
-    #         pars = p0
-    #         pars[param_index] = _par
-    #         prob, blob = log_prob(pars, options, debugging=True, run_id=f'p{param_index}_{_par:.2f}')
-    #         fff.write(f'p{param_index}={_par}, logp={prob}, blob={blob}, pars: {pars}\n')
 
 
 if __name__ == '__main__':
