@@ -75,7 +75,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     if not (
             (0 <= params['size_exp'] <= 4)
             and (0 <= params['amax_exp'] <= 15)
-            and (0.02 <= params['amax_coeff'] <= 0.035)
+            and (0.02 <= params['amax_coeff'])
             and (1e-6 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
             and (params['cutoff_exp_d2g'] >= 0)
@@ -416,14 +416,14 @@ def main():
 
     # original
     p0 = [
-        0.607077,
-        11.407141,
-        0.027,
-        0.003559,
-        0.889130,
-        16.738327,
-        19.963845,
-        363.160482,
+        0.35,
+        10.40647049930572,
+        0.035,
+        0.015,
+        0.3644695473345277,
+        0.11209235383483679,
+        1.6665693270975104,
+        238.07556409298385,
      ]
 
     #  - dust density at 1 au ~ 200 g / cm3

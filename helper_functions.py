@@ -691,50 +691,6 @@ def show_image(img_sim, img_obs, norm_sim, norm_obs, **kwargs):
     plt.show()
 
 
-def show_profiles(opt: dict, **out_dict):
-    profiles_sim = out_dict['profiles_sca_sim']
-    profiles_obs = out_dict['profiles_sca_obs']
-
-    f, ax = plt.subplots(1, 2, figsize=(10, 5))
-
-    x_beam_as = np.sqrt(out_dict['iq_mm_obs'].beamarea_arcsec * 4 * np.log(2) / np.pi)
-    rms = opt['RMS_jyb'] / (out_dict['iq_mm_obs'].beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
-    rms_weighted = rms / np.sqrt(out_dict['x_mm_sim'] / (2 * np.pi * x_beam_as))
-
-    ax[0].semilogy(opt['x_mm_obs'], opt['y_mm_obs'], 'x-')
-    ax[0].semilogy(out_dict['x_mm_sim'], rms_weighted, '--')
-    ax[0].semilogy(out_dict['x_mm_sim'], out_dict['y_mm_sim'], c='red')
-    ax[0].fill_between(opt['x_mm_obs'], opt['y_mm_obs'] - opt['dy_mm_obs'], opt['y_mm_obs'] + opt['dy_mm_obs'])
-    ax[0].set_title('Continuum 1.25 mm emission')
-    ax[1].set_title('Scattered 1.65 $\mu$m emission')
-
-    for i, key in enumerate(profiles_sim.keys()):
-        profile = profiles_sim[key]
-        x = profile['x']
-        y = profile['y']
-        dy = profile['dy']
-
-        ax[1].semilogy(x, y, c=f'C{i}')
-        ax[1].fill_between(x, y - dy, y + dy, fc=f'C{i}', alpha=0.5)
-
-    # norm = profiles_obs['B']['norm']
-    for i, key in enumerate(profiles_obs.keys()):
-        profile = profiles_obs[key]
-        x = profile['x']
-        y = profile['y']
-        dy = profile['dy']
-        # mask = profile['mask']
-
-        ax[1].semilogy(x, y, f'C{i}--')
-        ax[1].fill_between(x, y - dy, y + dy, fc=f'C{i}', alpha=0.5)
-
-    ax[0].set_xlim([1, 2.5])
-    ax[1].set_xlim([1, 2.5])
-    ax[1].set_ylim([1e-2, 1e1])
-
-    plt.show()
-
-
 def plot_blob(blob: str, norm_mm_sim, norm_mm_obs, norm_sca_sim, norm_sca_obs, folder: str = None):
     if folder is None:
         fpath = Path(f'pars_test/run_{blob}.pickle')

@@ -188,19 +188,28 @@ ndim = 8
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 
-size_exp = 0.72
-amax_exp = 7.11
-amax_coeff = 0.025
-d2g_coeff = 0.01
-d2g_exp = 0.61
-cutoff_exp_d2g = 0.06
-cutoff_exp_amax = 0.05
-cutoff_r = 300
+# size_exp = 0.72
+# amax_exp = 7.11
+# amax_coeff = 0.025
+# d2g_coeff = 0.01
+# d2g_exp = 0.61
+# cutoff_exp_d2g = 0.06
+# cutoff_exp_amax = 0.05
+# cutoff_r = 300
 
-size_exp_array = np.absolute(np.random.uniform(0.5 * size_exp, 1.5 * size_exp, nwalkers))
+size_exp = 0.4
+amax_exp = 10.40647049930572
+amax_coeff = 0.035
+d2g_coeff = 0.015
+d2g_exp = 0.3644695473345277
+cutoff_exp_d2g = 0.11209235383483679
+cutoff_exp_amax = 1.6665693270975104
+cutoff_r = 238.07556409298385
+
+size_exp_array = np.absolute(np.random.uniform(0.9 * size_exp, 1.1 * size_exp, nwalkers))
 a_max_exp_array = np.random.uniform(0, 15, nwalkers)
-a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.2 * amax_coeff, nwalkers)
-d2g_coeff_array = np.random.uniform(0.5 * d2g_coeff,  1.5 * d2g_coeff, nwalkers)
+a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.1 * amax_coeff, nwalkers)
+d2g_coeff_array = np.random.uniform(0.8 * d2g_coeff,  1.2 * d2g_coeff, nwalkers)
 d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
 cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  20, nwalkers))
 cutoff_exp_amax_array = np.absolute(np.random.uniform(0,  20, nwalkers))
