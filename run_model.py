@@ -206,14 +206,11 @@ cutoff_exp_d2g = 0.11209235383483679
 cutoff_exp_amax = 1.6665693270975104
 cutoff_r = 238.07556409298385
 
-size_exp_array = np.absolute(np.random.uniform(0.9 * size_exp, 1.1 * size_exp, nwalkers))
+size_exp_array = np.absolute(np.random.uniform(0.3, 0.7, nwalkers))
 a_max_exp_array = np.random.uniform(0, 15, nwalkers)
-a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.1 * amax_coeff, nwalkers)
-d2g_coeff_array = np.random.uniform(0.8 * d2g_coeff,  1.2 * d2g_coeff, nwalkers)
-d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
-cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  20, nwalkers))
-cutoff_exp_amax_array = np.absolute(np.random.uniform(0,  20, nwalkers))
-cutoff_r_array = np.random.uniform(250,  350, nwalkers)
+a_max_coeff_array = np.random.uniform(0.015,  0.04, nwalkers)
+d2g_coeff_array = np.random.uniform(0.01,  0.1, nwalkers)
+d2g_exp_array = np.absolute(np.random.uniform(0.1,  3, nwalkers))
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
@@ -221,9 +218,6 @@ p0 = np.vstack((size_exp_array,
                 a_max_coeff_array,
                 d2g_coeff_array,
                 d2g_exp_array,
-                cutoff_exp_d2g_array,
-                cutoff_exp_amax_array,
-                cutoff_r_array
                 )).T
 
 # hpt save file

@@ -54,9 +54,6 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         "amax_coeff": parameters[2],
         "d2g_coeff": parameters[3],
         "d2g_exp": parameters[4],
-        "cutoff_exp_d2g": parameters[5],
-        "cutoff_exp_amax": parameters[6],
-        "cutoff_r": parameters[7],
     }
 
     temp_number = random.getrandbits(32)
@@ -72,14 +69,11 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output = Capturing()
 
     if not (
-            (0 <= params['size_exp'] <= 4)
+            (0 <= params['size_exp'] <= 1)
             and (0 <= params['amax_exp'] <= 15)
-            and (0.02 <= params['amax_coeff'])
-            and (1e-6 <= params['d2g_coeff'] <= 1e-1)
+            and (0.015 <= params['amax_coeff'] <= 0.04)
+            and (1e-3 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
-            and (params['cutoff_exp_d2g'] >= 0)
-            and (params['cutoff_exp_amax'] >= 0)
-            and (230 <= params['cutoff_r'])
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -198,7 +192,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
 
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
         lower_limit_as = 1.
-        upper_limit_as = 1.89
+        upper_limit_as = 1.9
         # i_max = min(len(x_mm_obs), len(x_mm_sim)) - 1
 
         i_min_obs = x_mm_obs.searchsorted(lower_limit_as)
@@ -341,7 +335,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         profile_sim = profiles_sca_sim[key]
 
         lower_limit_as = 1.
-        upper_limit_as = 1.89
+        upper_limit_as = 1.9
 
         # we ignore the inner 1 arcsec as we are interested in the outer disk
         i_min_obs = profile_obs['x'].searchsorted(lower_limit_as)
@@ -434,22 +428,11 @@ def main():
 
     # original
     p0 = [
-        # 0.5,
-        # 11,
-        # 0.04,  #35
-        # 0.01,
-        # 0.3644695473345277,
-        # 0.001,
-        # 1.06665693270975104,
-        # 338.07556409298385,
         0.564533780345458,
         8.772845453279844,
         0.033733126110579284,
         0.0034718752559254446,
         0.36890625153010365,
-        42.406300462544635,
-        23.7673322063734,
-        311.8408096296023,
     ]
 
     #  - dust density at 1 au ~ 200 g / cm3

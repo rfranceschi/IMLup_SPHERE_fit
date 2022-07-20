@@ -59,9 +59,6 @@ def make_disklab2d_model(
     amax_coeff = parameters[2]
     d2g_coeff = parameters[3]
     d2g_exp = parameters[4]
-    cutoff_exp_d2g = parameters[5]
-    cutoff_exp_amax = parameters[6]
-    cutoff_r = parameters[7]
 
     # hard-coded gas parameters
     sigma_coeff = 28.4
@@ -84,13 +81,9 @@ def make_disklab2d_model(
 
     # add the dust, based on the dust-to-gas parameters
 
-    #  experiment d2g distribution
-    # d2g = d2g_coeff * ((d.r / (300 * au)) ** d2g_exp) * np.exp(-(d.r / (300 * au))**(4))
-    # d2g = SmoothlyBrokenPowerLaw1D(d2g_coeff, 158 * au, 0, d2g_exp)(d.r) * np.exp(-(d.r / (r_crit * au)))
-    # d2g = PowerLaw1D(d2g_coeff, x_0, d2g_exp)(d.r) * Exponential1D(1, -cutoff_exp_d2g)(d.r / (cutoff_r * au))
-    d2g_old = d2g_coeff * (d.r / (160 * au))**(-d2g_exp) * np.exp(-(d.r / (cutoff_r * au)) ** cutoff_exp_d2g)
+    d2g_old = d2g_coeff * (d.r / (160 * au))**(-d2g_exp)
     d2g = np.minimum(0.1, d2g_old)
-    a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp) * np.exp(-(d.r / (cutoff_r * au)) ** cutoff_exp_amax)
+    a_max = amax_coeff * (d.r / (300 * au)) ** (-amax_exp)
 
     a_i = get_interfaces_from_log_cell_centers(a_opac)
     # if we change a0 and a1 we have a different grid than a_opac, and the interpolation creates the wrong g parameter
