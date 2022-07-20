@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 # import os
-# import tempfile
 import logging
 import pickle
 import random
@@ -416,17 +415,32 @@ def main():
 
     # original
     p0 = [
-        0.35,
-        10.40647049930572,
-        0.035,
-        0.015,
-        0.3644695473345277,
-        0.11209235383483679,
-        1.6665693270975104,
-        238.07556409298385,
+        # 0.5,
+        # 11,
+        # 0.04,  #35
+        # 0.01,
+        # 0.3644695473345277,
+        # 0.001,
+        # 1.06665693270975104,
+        # 338.07556409298385,
+        0.564533780345458,
+        9,  # 9
+        0.01,
+        0.0033,
+        0.36890625153010365,
+        42.406300462544635,
+        23.7673322063734,
+        340.8408096296023,
      ]
 
     #  - dust density at 1 au ~ 200 g / cm3
+
+    run_id = 'test'
+    run_path = Path(options['output_dir']) / f'run_{run_id}'
+    if run_path.exists():
+        fpath = run_path.with_suffix('.pickle')
+        fpath.unlink()
+        shutil.rmtree(run_path)
 
     prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)

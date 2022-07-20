@@ -214,7 +214,10 @@ def make_disklab2d_model(
 
     disk2d = disklab.Disk2D(
         disk=d,
-        meanopacitymodel=d.meanopacitymodel)
+        meanopacitymodel=d.meanopacitymodel,
+        nz=150,
+        zrmax=1.5,
+    )
 
     # taken from snippet vertstruc 2d_1
     # for vert in disk2d.verts:

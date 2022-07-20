@@ -44,9 +44,9 @@ disk = 'IMLup'
 
 # disklab grid
 disklab_grid = {
-    "nr": 200,
+    "nr": 300,
     "rin": 0.2 * au,
-    "rout": 450 * au,  # 400au from avenhaus paper  #DSHARP Huang 2018 says 290 au
+    "rout": 400 * au,  # 400au from avenhaus paper  #DSHARP Huang 2018 says 290 au
 }
 
 # physical parameters
