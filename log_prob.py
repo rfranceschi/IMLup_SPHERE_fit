@@ -197,15 +197,21 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     dy_mm_obs = options['dy_mm_obs']
 
     if not (len(options['x_mm_obs']) == len(x_mm_sim)):
-        i_max = min(len(x_mm_obs), len(x_mm_sim)) - 1
-        i_min_obs = x_mm_obs.searchsorted(1.1)
-        i_min_sim = x_mm_sim.searchsorted(1.1)
-        x_mm_sim = x_mm_sim[i_min_sim:i_max]
-        y_mm_sim = y_mm_sim[i_min_sim:i_max]
-        dy_mm_sim = dy_mm_sim[i_min_sim:i_max]
-        x_mm_obs = x_mm_obs[i_min_obs:i_max]
-        y_mm_obs = y_mm_obs[i_min_obs:i_max]
-        dy_mm_obs = dy_mm_obs[i_min_obs:i_max]
+        lower_limit_as = 1.
+        upper_limit_as = 1.89
+        # i_max = min(len(x_mm_obs), len(x_mm_sim)) - 1
+
+        i_min_obs = x_mm_obs.searchsorted(lower_limit_as)
+        i_max_obs = x_mm_obs.searchsorted(upper_limit_as)
+        i_min_sim = x_mm_sim.searchsorted(lower_limit_as)
+        i_max_sim = x_mm_sim.searchsorted(upper_limit_as)
+
+        x_mm_sim = x_mm_sim[i_min_sim:i_max_sim]
+        y_mm_sim = y_mm_sim[i_min_sim:i_max_sim]
+        dy_mm_sim = dy_mm_sim[i_min_sim:i_max_sim]
+        x_mm_obs = x_mm_obs[i_min_obs:i_max_obs]
+        y_mm_obs = y_mm_obs[i_min_obs:i_max_obs]
+        dy_mm_obs = dy_mm_obs[i_min_obs:i_max_obs]
 
     if not np.allclose(x_mm_sim, x_mm_obs):
         raise ValueError(f'observed and simulated millimeter radial profile grids are not equal (run {temp_number})')
@@ -334,25 +340,38 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         profile_obs = options['profiles_sca_obs'][key]
         profile_sim = profiles_sca_sim[key]
 
-        # we ignore the inner 1 arcsec as we are interested in the outer disk
-        i_obs_0 = profile_obs['x'].searchsorted(1.1)
-        i_sim_0 = profile_sim['x'].searchsorted(1.1)
-        max_len = min(len(profile_obs['x']), len(profile_sim['x'])) - 1
+        lower_limit_as = 1.
+        upper_limit_as = 1.89
 
-        assert np.allclose(profile_sim['x'][i_sim_0:max_len],
-                           profile_obs['x'][i_obs_0:max_len]), 'x arrays do not agree'
+        # we ignore the inner 1 arcsec as we are interested in the outer disk
+        i_min_obs = profile_obs['x'].searchsorted(lower_limit_as)
+        i_max_obs = profile_obs['x'].searchsorted(upper_limit_as)
+        i_min_sim = profile_sim['x'].searchsorted(lower_limit_as)
+        i_max_sim = profile_sim['x'].searchsorted(upper_limit_as)
+
+        profile_sim['x'] = profile_sim['x'][i_min_sim:i_max_sim]
+        profile_sim['y'] = profile_sim['y'][i_min_sim:i_max_sim]
+        profile_sim['dy'] = profile_sim['dy'][i_min_sim:i_max_sim]
+        profile_obs['x'] = profile_obs['x'][i_min_obs:i_max_obs]
+        profile_obs['y'] = profile_obs['y'][i_min_obs:i_max_obs]
+        profile_obs['dy'] = profile_obs['dy'][i_min_obs:i_max_obs]
+
+        # max_len = min(len(profile_obs['x']), len(profile_sim['x'])) - 1
+
+        assert np.allclose(profile_sim['x'][i_min_sim:i_max_sim],
+                           profile_obs['x'][i_min_obs:i_max_obs]), 'x arrays do not agree'
 
         x_beam_sca_as = np.sqrt(iq_sca_obs.beamarea_arcsec * 4 * np.log(2) / np.pi)
-        rms_sca = profile_obs['dy'][i_obs_0:max_len] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
+        rms_sca = profile_obs['dy'][i_min_obs:i_max_obs] / (iq_sca_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (
                 1 * u.Jy).cgs.value
         # in the next line 10 deg is the aperture of the cones from which we extracted the profiles
         rms_sca_weighted = rms_sca / np.sqrt(
-            profile_obs['x'][i_obs_0:max_len] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
+            profile_obs['x'][i_min_obs:i_max_obs] / (2 * np.pi * x_beam_sca_as / (10 * u.deg).to(u.rad).value))
 
         # divide by 4 because we have 4 sca and one mm profiles
-        chi_squared += 0.25 * calculate_chisquared(profile_sim['y'][i_sim_0:max_len],
-                                                   profile_obs['y'][i_obs_0:max_len],
-                                                   np.maximum(rms_sca_weighted, profile_obs['dy'][i_obs_0:max_len]))
+        chi_squared += 0.25 * calculate_chisquared(profile_sim['y'][i_min_sim:i_max_sim],
+                                                   profile_obs['y'][i_min_obs:i_max_obs],
+                                                   np.maximum(rms_sca_weighted, profile_obs['dy'][i_min_obs:i_max_obs]))
     # Jeffreys’ prior
     logp = -chi_squared + np.log(parameters[1] * parameters[3])
 
@@ -424,23 +443,24 @@ def main():
         # 1.06665693270975104,
         # 338.07556409298385,
         0.564533780345458,
-        9,  # 9
-        0.01,
-        0.0033,
+        8.772845453279844,
+        0.033733126110579284,
+        0.0034718752559254446,
         0.36890625153010365,
         42.406300462544635,
         23.7673322063734,
-        340.8408096296023,
-     ]
+        311.8408096296023,
+    ]
 
     #  - dust density at 1 au ~ 200 g / cm3
 
     run_id = 'test'
     run_path = Path(options['output_dir']) / f'run_{run_id}'
+    output_path = run_path.with_suffix('.pickle')
     if run_path.exists():
-        fpath = run_path.with_suffix('.pickle')
-        fpath.unlink()
         shutil.rmtree(run_path)
+    if output_path.exists():
+        output_path.unlink()
 
     prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)
