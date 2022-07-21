@@ -206,11 +206,11 @@ cutoff_exp_d2g = 0.11209235383483679
 cutoff_exp_amax = 1.6665693270975104
 cutoff_r = 238.07556409298385
 
-size_exp_array = np.absolute(np.random.uniform(0.3, 0.7, nwalkers))
+size_exp_array = np.absolute(np.random.uniform(0.4, 0.8, nwalkers))
 a_max_exp_array = np.random.uniform(0, 15, nwalkers)
 a_max_coeff_array = np.random.uniform(0.015,  0.04, nwalkers)
-d2g_coeff_array = np.random.uniform(0.01,  0.1, nwalkers)
-d2g_exp_array = np.absolute(np.random.uniform(0.1,  3, nwalkers))
+d2g_coeff_array = np.random.uniform(0.001,  0.01, nwalkers)
+d2g_exp_array = np.absolute(np.random.uniform(0.01,  3, nwalkers))
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
