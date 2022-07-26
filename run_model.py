@@ -197,28 +197,28 @@ a_max_300 = options['lam_mm'] / (2 * np.pi)
 # cutoff_exp_amax = 0.05
 # cutoff_r = 300
 
-size_exp = 0.4
-amax_exp = 10.40647049930572
-amax_coeff = 0.035
-d2g_coeff = 0.015
-d2g_exp = 0.3644695473345277
-cutoff_exp_d2g = 0.11209235383483679
-cutoff_exp_amax = 1.6665693270975104
-cutoff_r = 238.07556409298385
+size_exp = 0.6735815856395431
+amax_exp = 10.00593020974905
+amax_coeff = 0.011154391492374566
+d2g_coeff = 0.006253111428341253
+d2g_exp = 0.8836492633144789
+cutoff_exp_d2g = 10.118311030269979
+cutoff_exp_amax = 16.115635293001585
+cutoff_r = 347.0248060042721
 
-size_exp_array = np.absolute(np.random.uniform(0.9 * size_exp, 1.1 * size_exp, nwalkers))
-a_max_exp_array = np.random.uniform(0, 15, nwalkers)
-a_max_coeff_array = np.random.uniform(0.8 * amax_coeff,  1.1 * amax_coeff, nwalkers)
+size_exp_array = np.absolute(np.random.uniform(0.8 * size_exp, 1.2 * size_exp, nwalkers))
+amax_exp_array = np.random.uniform(0.8 * amax_exp, 1.2 * amax_exp, nwalkers)
+amax_coeff_array = np.random.uniform(0.9 * amax_coeff,  1.2 * amax_coeff, nwalkers)
 d2g_coeff_array = np.random.uniform(0.8 * d2g_coeff,  1.2 * d2g_coeff, nwalkers)
-d2g_exp_array = np.absolute(np.random.uniform(0.5 * d2g_exp,  1.5 * d2g_exp, nwalkers))
-cutoff_exp_d2g_array = np.absolute(np.random.uniform(0,  20, nwalkers))
-cutoff_exp_amax_array = np.absolute(np.random.uniform(0,  20, nwalkers))
-cutoff_r_array = np.random.uniform(250,  350, nwalkers)
+d2g_exp_array = np.absolute(np.random.uniform(0.8 * d2g_exp,  1.2 * d2g_exp, nwalkers))
+cutoff_exp_d2g_array = np.absolute(np.random.uniform(0.8 * cutoff_exp_d2g,  1.2 * cutoff_exp_d2g, nwalkers))
+cutoff_exp_amax_array = np.absolute(np.random.uniform(0.8 * cutoff_exp_amax,  1.2 * cutoff_exp_amax, nwalkers))
+cutoff_r_array = np.random.uniform(0.8 * cutoff_r,  1.2 * cutoff_r, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
-                a_max_exp_array,
-                a_max_coeff_array,
+                amax_exp_array,
+                amax_coeff_array,
                 d2g_coeff_array,
                 d2g_exp_array,
                 cutoff_exp_d2g_array,
