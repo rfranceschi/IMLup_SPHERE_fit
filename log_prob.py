@@ -19,6 +19,7 @@ from disklab.radmc3d import write
 from gofish import imagecube
 from radmc3dPy import image
 
+import helper_functions
 from helper_functions import get_normalized_profiles
 from helper_functions import get_profile_from_fits
 from helper_functions import make_disklab2d_model
@@ -215,7 +216,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     rms = options['RMS_jyb'] / (iq_mm_obs.beamarea_arcsec * (u.arcsec ** 2).to('sr')) * (1 * u.Jy).cgs.value
     rms_weighted = rms / np.sqrt(x_mm_obs / (2 * np.pi * x_beam_as))
 
-    output_dict['y_mm_sim'] = y_mm_sim
+    output_dict['y_mm_sim'] = helper_functions.running_average(y_mm_sim, 10)
     output_dict['y_mm_obs'] = y_mm_obs
     output_dict['x_mm_sim'] = x_mm_sim
     output_dict['x_mm_obs'] = x_mm_obs
@@ -223,7 +224,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     output_dict['dy_mm_sim'] = dy_mm_sim
     output_dict['error'] = np.maximum(rms_weighted, dy_mm_obs)
 
-    chi_squared = calculate_chisquared(y_mm_sim, y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
+    chi_squared = calculate_chisquared(output_dict['y_mm_sim'], y_mm_obs, np.maximum(rms_weighted, dy_mm_obs))
 
     # call RADMC-3D to calculate sphere image
 
@@ -324,6 +325,9 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             z0=options['z0'],
             psi=options['psi'],
             beam=options['beam_sca'])
+
+        for _profile in profiles_sca_sim.values():
+            _profile['y'] = helper_functions.running_average(_profile['y'], 10)
 
     try:
         assert np.allclose(options['profiles_sca_obs']['B']['x'], profiles_sca_sim['B']['x'])
