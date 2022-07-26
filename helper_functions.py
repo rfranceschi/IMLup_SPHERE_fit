@@ -606,7 +606,7 @@ def chop_forward_scattering(opac_dict, chopforward=5):
     return zscat, zscat_nochop, k_sca, g
 
 
-def write_radmc3d(disk2d, lam, path, show_plots=False, nphot=10000000):
+def write_radmc3d(disk2d, lam, path, show_plots=False, nphot=10000000, nphot_scat=100000):
     """
     convert the disk2d object to radmc3d format and write the radmc3d input files.
 
@@ -657,6 +657,7 @@ def write_radmc3d(disk2d, lam, path, show_plots=False, nphot=10000000):
             'scattering_mode': 5,
             'scattering_mode_max': 5,  # was 5 (most realistic scattering), 1 is isotropic
             'nphot': nphot,
+            'nphot_scat': nphot_scat,
             'dust_2daniso_nphi': '60',
             'mc_scat_maxtauabs': '5.d0',
         },

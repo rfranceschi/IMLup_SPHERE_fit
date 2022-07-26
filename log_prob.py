@@ -74,12 +74,12 @@ def log_prob(parameters, options, debugging=False, run_id=None):
     if not (
             (0 <= params['size_exp'] <= 4)
             and (0 <= params['amax_exp'] <= 15)
-            and (0.02 <= params['amax_coeff'])
+            and (0.005 <= params['amax_coeff'])
             and (1e-6 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
             and (params['cutoff_exp_d2g'] >= 0)
             and (params['cutoff_exp_amax'] >= 0)
-            and (230 <= params['cutoff_r'])
+            and (280 <= params['cutoff_r'])
     ):
         print("Parameters out of prior")
         return -np.Inf, -1
@@ -415,32 +415,33 @@ def main():
 
     # original
     p0 = [
-        # 0.5,
-        # 11,
-        # 0.04,  #35
-        # 0.01,
-        # 0.3644695473345277,
-        # 0.001,
-        # 1.06665693270975104,
-        # 338.07556409298385,
-        0.564533780345458,
-        9,  # 9
-        0.01,
-        0.0033,
-        0.36890625153010365,
-        42.406300462544635,
-        23.7673322063734,
-        340.8408096296023,
+        0.6735815856395431,
+        10.00593020974905,
+        0.011154391492374566,
+        0.006253111428341253,
+        0.8836492633144789,
+        10.118311030269979,
+        16.115635293001585,
+        347.0248060042721,
+        # 0.7,
+        # 9.2,
+        # 0.031,  # 31
+        # 0.004,
+        # 0.045,
+        # 63.25842543535437,
+        # 18.761875509651407,
+        # 300.56987407680367,  # 330
      ]
 
     #  - dust density at 1 au ~ 200 g / cm3
 
     run_id = 'test'
-    run_path = Path(options['output_dir']) / f'run_{run_id}'
-    if run_path.exists():
-        fpath = run_path.with_suffix('.pickle')
-        fpath.unlink()
-        shutil.rmtree(run_path)
+    run_dir = Path(options['output_dir']) / f'run_{run_id}'
+    run_dict = run_dir.with_suffix('.pickle')
+    if run_dir.exists():
+        shutil.rmtree(run_dir)
+    if run_dict.exists():
+        run_dict.unlink()
 
     prob, blob = log_prob(p0, options, debugging=True, run_id='test')
     print(prob, blob)
