@@ -183,8 +183,8 @@ pickle.dump(options, open("options.pickle", "wb"))
 # Here we define some inputs and initial parameter sets for the optimization
 
 # defining number of walkers
-nwalkers = 16  # it  does not work with fewer  walkers than the number  of dimensions
-ndim = 8
+nwalkers = 20  # it  does not work with fewer  walkers than the number  of dimensions
+ndim = 9
 
 a_max_300 = options['lam_mm'] / (2 * np.pi)
 
@@ -197,14 +197,15 @@ a_max_300 = options['lam_mm'] / (2 * np.pi)
 # cutoff_exp_amax = 0.05
 # cutoff_r = 300
 
-size_exp = 0.6735815856395431
-amax_exp = 10.00593020974905
-amax_coeff = 0.011154391492374566
-d2g_coeff = 0.006253111428341253
-d2g_exp = 0.8836492633144789
-cutoff_exp_d2g = 10.118311030269979
-cutoff_exp_amax = 16.115635293001585
-cutoff_r = 347.0248060042721
+size_exp = 0.67
+amax_exp = 10.01
+amax_coeff = 0.011
+d2g_coeff = 0.006
+d2g_exp = 0.88
+cutoff_exp_d2g = 10.11
+cutoff_exp_amax = 16.11
+cutoff_r = 347.02
+alpha = 0.001
 
 size_exp_array = np.absolute(np.random.uniform(0.8 * size_exp, 1.2 * size_exp, nwalkers))
 amax_exp_array = np.random.uniform(0.8 * amax_exp, 1.2 * amax_exp, nwalkers)
@@ -214,6 +215,7 @@ d2g_exp_array = np.absolute(np.random.uniform(0.8 * d2g_exp,  1.2 * d2g_exp, nwa
 cutoff_exp_d2g_array = np.absolute(np.random.uniform(0.8 * cutoff_exp_d2g,  1.2 * cutoff_exp_d2g, nwalkers))
 cutoff_exp_amax_array = np.absolute(np.random.uniform(0.8 * cutoff_exp_amax,  1.2 * cutoff_exp_amax, nwalkers))
 cutoff_r_array = np.random.uniform(0.8 * cutoff_r,  1.2 * cutoff_r, nwalkers)
+alpha_array = np.random.uniform(0.0001, 0.01, nwalkers)
 
 # Input matrix of priors
 p0 = np.vstack((size_exp_array,
@@ -223,7 +225,8 @@ p0 = np.vstack((size_exp_array,
                 d2g_exp_array,
                 cutoff_exp_d2g_array,
                 cutoff_exp_amax_array,
-                cutoff_r_array
+                cutoff_r_array,
+                alpha_array
                 )).T
 
 # hpt save file
@@ -232,7 +235,7 @@ filename = 'chain.hdf5'
 backend = emcee.backends.HDFBackend(filename)
 backend.reset(nwalkers, ndim)
 
-procs = 16  # 30
+procs = 20  # 30
 steps = 1000  # 1000
 
 if procs > 1:
