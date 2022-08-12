@@ -98,7 +98,7 @@ def log_prob(parameters, options, debugging=False, run_id=None):
         options['lstar'],
         options['tstar'],
         options['nr'],
-        options['alpha'],
+        parameters[8],
         options['rin'],
         options['rout'],
         options['r_c'],
@@ -419,19 +419,21 @@ def main():
 
     # original
     p0 = [
-        0.6735815856395431,
-        10.00593020974905,
-        0.011154391492374566,
-        0.006253111428341253,
-        0.8836492633144789,
-        10.118311030269979,
-        16.115635293001585,
-        347.0248060042721,
+        # run_2526262626.pickle
+        0.7195633438835746,
+        10.728592216140784,
+        0.010619835211493976,
+        0.005803538930967831,
+        0.7819504584544335,
+        10.769926632341882,
+        14.111541144568417,
+        379.65806137920003,
+        0.0026028869022983844,
      ]
 
     #  - dust density at 1 au ~ 200 g / cm3
 
-    run_id = 'test'
+    run_id = 'high_res'
     run_dir = Path(options['output_dir']) / f'run_{run_id}'
     run_dict = run_dir.with_suffix('.pickle')
     if run_dir.exists():
@@ -439,7 +441,7 @@ def main():
     if run_dict.exists():
         run_dict.unlink()
 
-    prob, blob = log_prob(p0, options, debugging=True, run_id='test')
+    prob, blob = log_prob(p0, options, debugging=True, run_id=run_id)
     print(prob, blob)
 
 

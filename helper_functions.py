@@ -76,7 +76,11 @@ def make_disklab2d_model(
 
     # start with the 1D model
 
-    d = disklab.DiskRadialModel(mstar=mstar, lstar=lstar, tstar=tstar, nr=nr, alpha=alpha, rin=rin, rout=rout)
+    # d = disklab.DiskRadialModel(mstar=mstar, lstar=lstar, tstar=tstar, nr=nr, alpha=alpha, rin=rin, rout=rout)
+    r_sep = 20 * au
+    n_sep = 40
+    rmod = np.hstack((np.geomspace(rin, r_sep, n_sep + 1)[:-1], np.linspace(r_sep, rout, nr - n_sep)))
+    d = disklab.DiskRadialModel(mstar=mstar, lstar=lstar, tstar=tstar, alpha=alpha, rgrid=rmod)
     d.make_disk_from_simplified_lbp(sigma_coeff, r_c, sigma_exp)
 
     if d.mass / mstar > 0.2:
