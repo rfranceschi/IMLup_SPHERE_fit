@@ -79,8 +79,8 @@ def log_prob(parameters, options, debugging=False, run_id=None):
             and (0.005 <= params['amax_coeff'] <= 0.04)
             and (1e-4 <= params['d2g_coeff'] <= 1e-1)
             and (0 <= params['d2g_exp'] <= 3)
-            and (0 <= params['cutoff_exp_d2g'] <= 15)
-            and (0 <= params['cutoff_exp_amax'] <= 15)
+            and (params['cutoff_exp_d2g'] >= 0)
+            and (0 <= params['cutoff_exp_amax'] >= 0)
             and (250 <= params['cutoff_r'] <= 400)
             and (1e-4 <= params['alpha'] <= 1e-2)
     ):
